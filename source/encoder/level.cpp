@@ -31,7 +31,7 @@ namespace X265_NS {
 typedef struct
 {
     uint32_t maxLumaSamples;
-    uint32_t maxLumaSamplesPerSecond;
+    uint64_t maxLumaSamplesPerSecond;
     uint32_t maxBitrateMain;
     uint32_t maxBitrateHigh;
     uint32_t maxCpbSizeMain;
