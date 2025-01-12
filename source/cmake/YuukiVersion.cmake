@@ -10,7 +10,7 @@ execute_process(COMMAND
     )
 
 if(NOT "${MOD_BUILD}" STREQUAL "Asuna")
-    set(X265_BASE_BRANCH "master")
+    set(X265_BASE_BRANCH "master-2025-01-07")
 else()
     set(X265_BASE_BRANCH "old-stable")
 endif()
