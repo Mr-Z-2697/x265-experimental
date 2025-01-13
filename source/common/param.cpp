@@ -150,6 +150,8 @@ void x265_param_default(x265_param* param)
     param->bEnableWavefront = 1;
     param->frameNumThreads = 0;
 
+    param->maxNumIntraCand = 0;
+
     param->logLevel = X265_LOG_INFO;
     param->csvLogLevel = 0;
     param->csvfn[0] = 0;
@@ -1001,6 +1003,7 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
             }
         }
     }
+    OPT("intra-cands") p->maxNumIntraCand = atoi(value);
     OPT("frame-threads") p->frameNumThreads = atoi(value);
     OPT("pmode") p->bDistributeModeAnalysis = atobool(value);
     OPT("pme") p->bDistributeMotionEstimation = atobool(value);
@@ -2223,6 +2226,7 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     s += snprintf(s, bufSize - (s - buf), " %s", (param) ? cliopt : "no-" cliopt);
 
     s += snprintf(s, bufSize - (s - buf), "cpuid=%d", p->cpuid);
+    s += snprintf(s, bufSize - (s - buf), " intra-cands=%d", p->maxNumIntraCand);
     s += snprintf(s, bufSize - (s - buf), " frame-threads=%d", p->frameNumThreads);
     if (strlen(p->numaPools))
         s += snprintf(s, bufSize - (s - buf), " numa-pools=%s", p->numaPools);
@@ -2699,6 +2703,7 @@ void x265_copy_params(x265_param* dst, x265_param* src)
 {
     dst->mcstfFrameRange = src->mcstfFrameRange;
     dst->cpuid = src->cpuid;
+    dst->maxNumIntraCand = src->maxNumIntraCand;
     dst->frameNumThreads = src->frameNumThreads;
     if (strlen(src->numaPools)) snprintf(dst->numaPools, X265_MAX_STRING_SIZE, "%s", src->numaPools);
     else dst->numaPools[0] = 0;

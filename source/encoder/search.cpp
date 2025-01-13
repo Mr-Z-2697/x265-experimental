@@ -1550,7 +1550,9 @@ sse_t Search::estIntraPredQT(Mode &intraMode, const CUGeom& cuGeom, const uint32
             uint64_t candCostList[MAX_RD_INTRA_MODES];
             uint32_t rdModeList[MAX_RD_INTRA_MODES];
             uint64_t bcost;
-            int maxCandCount = 2 + m_param->rdLevel + ((depth + initTuDepth) >> 1);
+            int maxCandCount = m_param->maxNumIntraCand;
+            if(maxCandCount == 0)
+                maxCandCount = 2 + m_param->rdLevel + ((depth + initTuDepth) >> 1);
 
             {
                 ProfileCUScope(intraMode.cu, intraAnalysisElapsedTime, countIntraAnalysis);

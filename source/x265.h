@@ -1148,6 +1148,8 @@ typedef struct x265_param
      * the encoder will never generate more thread pools than frameNumThreads */
     char numaPools[X265_MAX_STRING_SIZE];
 
+    uint32_t maxNumIntraCand;
+
     /* Enable wavefront parallel processing, greatly increases parallelism for
      * less than 1% compression efficiency loss. Requires a thread pool, enabled
      * by default */

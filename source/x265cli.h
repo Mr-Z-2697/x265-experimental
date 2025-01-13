@@ -56,6 +56,7 @@ static const struct option long_options[] =
     { "no-asm",               no_argument, NULL, 0 },
     { "pools",          required_argument, NULL, 0 },
     { "numa-pools",     required_argument, NULL, 0 },
+    { "intra-cands",    required_argument, NULL, 0 },
     { "preset",         required_argument, NULL, 'p' },
     { "tune",           required_argument, NULL, 't' },
     { "frame-threads",  required_argument, NULL, 'F' },
