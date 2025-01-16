@@ -2550,7 +2550,7 @@ int Encoder::reconfigureParam(x265_param* encParam, x265_param* param)
         encParam->limitModes = param->limitModes;
         encParam->bEnableSplitRdSkip = param->bEnableSplitRdSkip;
         encParam->bCULossless = param->bCULossless;
-        encParam->bEnableRdRefine = param->bEnableRdRefine;
+        encParam->rdRefine = param->rdRefine;
         encParam->limitTU = param->limitTU;
         encParam->bEnableTSkipFast = param->bEnableTSkipFast;
         encParam->rdPenalty = param->rdPenalty;
@@ -3737,7 +3737,7 @@ void Encoder::configureZone(x265_param *p, x265_param *zone)
         p->limitModes = zone->limitModes;
         p->bEnableSplitRdSkip = zone->bEnableSplitRdSkip;
         p->bCULossless = zone->bCULossless;
-        p->bEnableRdRefine = zone->bEnableRdRefine;
+        p->rdRefine = zone->rdRefine;
         p->limitTU = zone->limitTU;
         p->bEnableTSkipFast = zone->bEnableTSkipFast;
         p->rdPenalty = zone->rdPenalty;
@@ -4343,9 +4343,9 @@ void Encoder::configure(x265_param *p)
         m_conformanceWindow.rightOffset = padsize;
     }
 
-    if (p->bEnableRdRefine && (p->rdLevel < 5 || !p->rc.aqMode))
+    if (p->rdRefine && (p->rdLevel < 5 || !p->rc.aqMode))
     {
-        p->bEnableRdRefine = false;
+        p->rdRefine = false;
         x265_log(p, X265_LOG_WARNING, "--rd-refine disabled, requires RD level > 4 and adaptive quant\n");
     }
 

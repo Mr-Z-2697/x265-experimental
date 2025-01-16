@@ -292,7 +292,7 @@ void x265_param_default(x265_param* param)
     param->bLossless = 0;
     param->bCULossless = 0;
     param->bEnableTemporalSubLayers = 0;
-    param->bEnableRdRefine = 0;
+    param->rdRefine = 0;
     param->bMultiPassOptRPS = 0;
     param->bSsimRd = 0;
 
@@ -1078,7 +1078,15 @@ int x265_zone_param_parse(x265_param* p, const char* name, const char* value)
     OPT("limit-modes") p->limitModes = atobool(value);
     OPT("splitrd-skip") p->bEnableSplitRdSkip = atobool(value);
     OPT("cu-lossless") p->bCULossless = atobool(value);
-    OPT("rd-refine") p->bEnableRdRefine = atobool(value);
+    OPT("rd-refine")
+    {
+        p->rdRefine = atobool(value);
+        if (bError || p->rdRefine)
+        {
+            bError = false;
+            p->rdRefine = atoi(value);
+        }
+    }
     OPT("limit-tu") p->limitTU = atoi(value);
     OPT("tskip") p->bEnableTransformSkip = atobool(value);
     OPT("tskip-fast") p->bEnableTSkipFast = atobool(value);
@@ -1338,7 +1346,15 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
         else
             p->psyRdoq = 0.0;
     }
-    OPT("rd-refine") p->bEnableRdRefine = atobool(value);
+    OPT("rd-refine")
+    {
+        p->rdRefine = atobool(value);
+        if (bError || p->rdRefine)
+        {
+            bError = false;
+            p->rdRefine = atoi(value);
+        }
+    }
     OPT("signhide") p->bEnableSignHiding = atobool(value);
     OPT("b-intra") p->bIntraInBFrames = atobool(value);
     OPT("lft") p->bEnableLoopFilter = atobool(value); /* DEPRECATED */
@@ -2362,7 +2378,7 @@ void x265_print_params(x265_param* param)
     TOOLVAL(param->psyRd, "psy-rd=%.2lf");
     TOOLVAL(param->rdoqLevel, "rdoq=%d");
     TOOLVAL(param->psyRdoq, "psy-rdoq=%.2lf");
-    TOOLOPT(param->bEnableRdRefine, "rd-refine");
+    TOOLVAL(param->rdRefine, "rd-refine=%d");
     TOOLOPT(param->bEnableEarlySkip, "early-skip");
     TOOLVAL(param->recursionSkipMode, "rskip mode=%d");
     if (param->recursionSkipMode == EDGE_BASED_RSKIP)
@@ -2536,7 +2552,7 @@ char *x265_param2string(x265_param* p, int padx, int pady)
         s += snprintf(s, bufSize - (s - buf), " merange=%d", p->searchRange);
     }
     s += snprintf(s, bufSize - (s - buf), " subme=%d", p->subpelRefine);
-    BOOL(p->bEnableRdRefine, "rd-refine");
+    s += snprintf(s, bufSize - (s - buf), " rd-refine=%d", p->rdRefine);
     BOOL(p->bEnableEarlySkip, "early-skip");
     BOOL(p->recursionSkipMode, "rskip");
     if (p->recursionSkipMode == EDGE_BASED_RSKIP)
@@ -3054,7 +3070,7 @@ void x265_copy_params(x265_param* dst, x265_param* src)
     dst->rdPenalty = src->rdPenalty;
     dst->psyRd = src->psyRd;
     dst->psyRdoq = src->psyRdoq;
-    dst->bEnableRdRefine = src->bEnableRdRefine;
+    dst->rdRefine = src->rdRefine;
     dst->analysisReuseMode = src->analysisReuseMode;
     if (strlen(src->analysisReuseFileName)) snprintf(dst->analysisReuseFileName, X265_MAX_STRING_SIZE, "%s", src->analysisReuseFileName);
     else dst->analysisReuseFileName[0] = 0;
