@@ -497,8 +497,6 @@ void Analysis::qprdRefine(const CUData& parentCTU, const CUGeom& cuGeom, int32_t
             {
                 if (m_param->bOptCUDeltaQP && modCUQP > (int32_t)parentCTU.m_meanQP)
                     break;
-                if (failure > threshold)
-                    break;
 
                 recodeCU(parentCTU, cuGeom, modCUQP, qp);
                 cuCost = md.bestMode->rdCost;
@@ -506,6 +504,9 @@ void Analysis::qprdRefine(const CUData& parentCTU, const CUGeom& cuGeom, int32_t
                 COPY2_IF_LT(bestCUCost, cuCost, bestCUQP, modCUQP);
                 if (cuCost >= cuPrevCost)
                     failure++;
+
+                if (failure > threshold)
+                    break;
 
                 cuPrevCost = cuCost;
                 modCUQP += dir;
