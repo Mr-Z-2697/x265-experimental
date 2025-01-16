@@ -1651,7 +1651,7 @@ typedef struct x265_param
      * on the best CU partitions, chosen after the CU analysis, for a range of QPs
      * to find the optimal rounding effect. Only effective at rd-levels 5 and 6.
      * Default disabled */
-    int       bEnableRdRefine;
+    int       rdRefine;
 
     /* If save, write per-frame analysis information into analysis buffers.
      * If load, read analysis information into analysis buffer and use this

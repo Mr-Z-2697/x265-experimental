@@ -320,7 +320,7 @@ Mode& Analysis::compressCTU(CUData& ctu, Frame& frame, const CUGeom& cuGeom, con
 #endif
     }
 
-    if (m_param->bEnableRdRefine || m_param->bOptCUDeltaQP)
+    if (m_param->rdRefine || m_param->bOptCUDeltaQP)
         qprdRefine(ctu, cuGeom, qp, qp);
 
     if (m_param->csvLogLevel >= 2)
@@ -801,7 +801,7 @@ uint64_t Analysis::compressIntraCU(const CUData& parentCTU, const CUGeom& cuGeom
         }
     }
 
-    if (m_param->bEnableRdRefine && depth <= m_slice->m_pps->maxCuDQPDepth)
+    if (m_param->rdRefine && depth <= m_slice->m_pps->maxCuDQPDepth)
     {
         int cuIdx = (cuGeom.childOffset - 1) / 3;
         cacheCost[cuIdx] = md.bestMode->rdCost;
@@ -2708,7 +2708,7 @@ SplitData Analysis::compressInterCU_rd5_6(const CUData& parentCTU, const CUGeom&
         if (mightSplit && !skipRecursion)
             checkBestMode(md.pred[PRED_SPLIT], depth);
 
-        if (m_param->bEnableRdRefine && depth <= m_slice->m_pps->maxCuDQPDepth)
+        if (m_param->rdRefine && depth <= m_slice->m_pps->maxCuDQPDepth)
         {
             int cuIdx = (cuGeom.childOffset - 1) / 3;
             cacheCost[cuIdx] = md.bestMode->rdCost;
@@ -2914,7 +2914,7 @@ void Analysis::recodeCU(const CUData& parentCTU, const CUGeom& cuGeom, int32_t q
                 }
                 motionCompensation(mode.cu, pu, mode.predYuv, true, (m_csp != X265_CSP_I400 && m_frame->m_fencPic->m_picCsp != X265_CSP_I400));
             }
-            if (!m_param->interRefine && !m_param->bDynamicRefine && parentCTU.isSkipped(cuGeom.absPartIdx))
+            if (!m_param->interRefine && !m_param->bDynamicRefine && parentCTU.isSkipped(cuGeom.absPartIdx) && m_param->rdRefine < 2)
                 encodeResAndCalcRdSkipCU(mode);
             else
                 encodeResAndCalcRdInterCU(mode, cuGeom);

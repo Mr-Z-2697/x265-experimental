@@ -129,7 +129,7 @@ namespace X265_NS {
         H0("   --[no-]psy-rdoq <0..50.0>     Strength of psycho-visual optimization in RDO quantization, 0 to disable. Default %.1f\n", param->psyRdoq);
         H0("   --dynamic-rd <0..4.0>         Strength of dynamic RD, 0 to disable. Default %.2f\n", param->dynamicRd);
         H0("   --[no-]ssim-rd                Enable ssim rate-distortion optimization, 0 to disable. Default %s\n", OPT(param->bSsimRd));
-        H0("   --[no-]rd-refine              Enable QP-based RD refinement for rd levels 5 and 6. Default %s\n", OPT(param->bEnableRdRefine));
+        H0("   --[no-]rd-refine              Enable QP-based RD refinement for rd levels 5 and 6. 2: disable skip in recodeCU. Default %s\n", OPT(param->rdRefine));
         H0("   --[no-]early-skip             Enable early SKIP detection. Default %s\n", OPT(param->bEnableEarlySkip));
         H0("   --rskip <Integer>             Enable recursion skip for an early exit from CTU analysis during inter-prediction.\n"
            "                                     - 0: disabled.\n"

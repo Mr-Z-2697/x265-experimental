@@ -207,7 +207,7 @@ static const struct option long_options[] =
     { "psy-rdoq",       required_argument, NULL, 0 },
     { "no-psy-rd",            no_argument, NULL, 0 },
     { "no-psy-rdoq",          no_argument, NULL, 0 },
-    { "rd-refine",            no_argument, NULL, 0 },
+    { "rd-refine",      required_argument, NULL, 0 },
     { "no-rd-refine",         no_argument, NULL, 0 },
     { "scaling-list",   required_argument, NULL, 0 },
     { "lossless",             no_argument, NULL, 0 },
