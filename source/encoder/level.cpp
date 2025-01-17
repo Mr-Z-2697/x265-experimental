@@ -30,7 +30,7 @@
 namespace X265_NS {
 typedef struct
 {
-    uint32_t maxLumaSamples;
+    uint64_t maxLumaSamples;
     uint64_t maxLumaSamplesPerSecond;
     uint32_t maxBitrateMain;
     uint32_t maxBitrateHigh;
@@ -156,8 +156,8 @@ void determineLevel(const x265_param &param, VPS& vps)
         vps.ptl.profileCompatibilityFlag[Profile::MAINSCC] = true;
 #endif
 
-    uint32_t lumaSamples = param.sourceWidth * param.sourceHeight;
-    uint32_t samplesPerSec = (uint32_t)(lumaSamples * ((double)param.fpsNum / param.fpsDenom));
+    uint64_t lumaSamples = param.sourceWidth * param.sourceHeight;
+    uint64_t samplesPerSec = (uint64_t)(lumaSamples * ((double)param.fpsNum / param.fpsDenom));
     uint32_t bitrate = param.rc.vbvMaxBitrate ? param.rc.vbvMaxBitrate : param.rc.bitrate;
 
     const uint32_t MaxDpbPicBuf = param.bEnableSCC ? 7 : 6;
