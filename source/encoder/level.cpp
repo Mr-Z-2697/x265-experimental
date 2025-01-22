@@ -168,7 +168,7 @@ void determineLevel(const x265_param &param, VPS& vps)
     uint32_t i;
     if (param.bLossless)
     {
-        i = 13;
+        i = NumLevels - 1;
         vps.ptl.minCrForLevel = 1;
         vps.ptl.maxLumaSrForLevel = MAX_UINT;
         vps.ptl.levelIdc = Level::LEVEL8_5;
