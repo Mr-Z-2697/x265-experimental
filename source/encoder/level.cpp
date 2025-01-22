@@ -61,7 +61,7 @@ LevelSpec levels[] =
     { 142606336,  4812963840ULL,  320000,   1600000,  240000,  1600000,  6, Level::LEVEL7,   "7",   70 },
     { 142606336,  8556380160ULL,  480000,   3200000,  480000,  3200000,  6, Level::LEVEL7_1, "7.1", 71 },
     { 142606336,  17112760320ULL, 960000,   6400000,  960000,  6400000,  6, Level::LEVEL7_2, "7.2", 72 },
-    { MAX_UINT, MAX_UINT, MAX_UINT, MAX_UINT, MAX_UINT, MAX_UINT, 1, Level::LEVEL8_5, "8.5", 85 },
+    { MAX_UINT64, MAX_UINT64, MAX_UINT, MAX_UINT, MAX_UINT, MAX_UINT, 1, Level::LEVEL8_5, "8.5", 85 },
 };
 
 static inline int _confirm(x265_param* param, bool bflag, const char* message)
