@@ -117,7 +117,7 @@ struct ProfileTierLevel
     int      profileIdc[MAX_LAYERS];
     int      levelIdc;
     uint32_t minCrForLevel;
-    uint32_t maxLumaSrForLevel;
+    uint64_t maxLumaSrForLevel;
     uint32_t bitDepthConstraint;
     int      chromaFormatConstraint;
     bool     tierFlag;

@@ -170,7 +170,7 @@ void determineLevel(const x265_param &param, VPS& vps)
     {
         i = NumLevels - 1;
         vps.ptl.minCrForLevel = 1;
-        vps.ptl.maxLumaSrForLevel = MAX_UINT;
+        vps.ptl.maxLumaSrForLevel = MAX_UINT64;
         vps.ptl.levelIdc = Level::LEVEL8_5;
         vps.ptl.tierFlag = Level::MAIN;
     }
@@ -404,8 +404,8 @@ bool enforceLevel(x265_param& param, VPS& vps)
     //highTier is allowed for this level and has not been explicitly disabled. This does not mean it is the final chosen tier
     bool allowHighTier = l.maxBitrateHigh < MAX_UINT && param.bHighTier;
 
-    uint32_t lumaSamples = param.sourceWidth * param.sourceHeight;
-    uint32_t samplesPerSec = (uint32_t)(lumaSamples * ((double)param.fpsNum / param.fpsDenom));
+    uint64_t lumaSamples = param.sourceWidth * param.sourceHeight;
+    uint64_t samplesPerSec = (uint64_t)(lumaSamples * ((double)param.fpsNum / param.fpsDenom));
     bool ok = true;
     if (lumaSamples > l.maxLumaSamples)
         ok = false;
