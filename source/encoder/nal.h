@@ -35,11 +35,8 @@ class Bitstream;
 class NALList
 {
 public:
-#if ENABLE_MULTIVIEW || ENABLE_ALPHA
-    static const int MAX_NAL_UNITS = 32;
-#else
-    static const int MAX_NAL_UNITS = 16;
-#endif
+
+static const int MAX_NAL_UNITS = 1024;
 
 public:
 
