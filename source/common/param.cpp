@@ -1325,7 +1325,11 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
         OPT("log2-max-poc-lsb") p->log2MaxPocLsb = atoi(value);
         OPT("vui-timing-info") p->bEmitVUITimingInfo = atobool(value);
         OPT("vui-hrd-info") p->bEmitVUIHRDInfo = atobool(value);
-        OPT("slices") p->maxSlices = atoi(value);
+        OPT("slices")
+        {
+            p->maxSlices = atoi(value);
+            p->frameNumThreads = 1;
+        }
         OPT("limit-tu") p->limitTU = atoi(value);
         OPT("opt-qp-pps") p->bOptQpPPS = atobool(value);
         OPT("opt-ref-list-length-pps") p->bOptRefListLengthPPS = atobool(value);
