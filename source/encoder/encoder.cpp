@@ -267,9 +267,16 @@ void Encoder::create()
     {
         if (!p->frameNumThreads)
         {
-            // auto-detect frame threads
-            int cpuCount = ThreadPool::getCpuCount();
-            ThreadPool::getFrameThreadsCount(p, cpuCount);
+            if (p->maxSlices > 1)
+            {
+                p->frameNumThreads = 1;
+            }
+            else
+            {
+                // auto-detect frame threads
+                int cpuCount = ThreadPool::getCpuCount();
+                ThreadPool::getFrameThreadsCount(p, cpuCount);
+            }
         }
     }
 

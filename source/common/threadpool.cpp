@@ -403,7 +403,16 @@ ThreadPool* ThreadPool::allocThreadPools(x265_param* p, int& numPools, bool isTh
         }
 
         if (!p->frameNumThreads)
-            ThreadPool::getFrameThreadsCount(p, totalNumThreads);
+        {
+            if (p->maxSlices > 1)
+            {
+                p->frameNumThreads = 1;
+            }
+            else
+            {
+                ThreadPool::getFrameThreadsCount(p, totalNumThreads);
+            }
+        }
     }
     
     if (!numPools)

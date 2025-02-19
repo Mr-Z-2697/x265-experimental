@@ -1328,7 +1328,7 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
         OPT("slices")
         {
             p->maxSlices = atoi(value);
-            p->frameNumThreads = 1;
+            // p->frameNumThreads = 1;
         }
         OPT("limit-tu") p->limitTU = atoi(value);
         OPT("opt-qp-pps") p->bOptQpPPS = atobool(value);
