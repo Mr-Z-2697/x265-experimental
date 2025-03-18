@@ -506,7 +506,7 @@ void PicYuv::copyFromPicture(const x265_picture& pic, const x265_param& param, i
         }
     }
     yPic = m_picOrg[0];
-    if (param.csvLogLevel >= 2 || param.maxCLL || param.maxFALL)
+    if (param.csvLogLevel >= 2 || param.maxCLL || param.maxFALL || param.bHDR10Opt)
     {
         for (int r = 0; r < height; r++)
         {
