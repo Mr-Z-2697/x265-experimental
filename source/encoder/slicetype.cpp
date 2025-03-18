@@ -616,24 +616,24 @@ void LookaheadTLD::calcAdaptiveQuantFrame(Frame *curFrame, x265_param* param)
                             // uint32_t picLumaMax = curFrame->m_fencPic->m_maxLumaLevel;
                             // uint32_t picLumaMin = curFrame->m_fencPic->m_minLumaLevel;
 
-                            // I just imagine pic luma avg will be like 512
-                            if (lumaAvg < picLumaAvg / 1.66)
+                            // I just imagine pic luma avg will be like 502
+                            if (lumaAvg < picLumaAvg * (301 / 502.))
                                 qp_adj += 3;
-                            else if (lumaAvg >= picLumaAvg / 1.66 && lumaAvg < picLumaAvg / 1.4)
+                            else if (lumaAvg >= picLumaAvg * (301 / 502.) && lumaAvg < picLumaAvg * (367 / 502.))
                                 qp_adj += 2;
-                            else if (lumaAvg >= picLumaAvg / 1.4 && lumaAvg < picLumaAvg / 1.2)
+                            else if (lumaAvg >= picLumaAvg * (367 / 502.) && lumaAvg < picLumaAvg * (434 / 502.))
                                 qp_adj += 1;
-                            else if (lumaAvg >= picLumaAvg / 1.2 && lumaAvg < picLumaAvg * 1.11)
+                            else if (lumaAvg >= picLumaAvg && lumaAvg < picLumaAvg * (567 / 502.))
                                 qp_adj -= 1;
-                            else if (lumaAvg >= picLumaAvg * 1.11 && lumaAvg < picLumaAvg * 1.24)
+                            else if (lumaAvg >= picLumaAvg * (567 / 502.) && lumaAvg < picLumaAvg * (634 / 502.))
                                 qp_adj -= 2;
-                            else if (lumaAvg >= picLumaAvg * 1.24 && lumaAvg < picLumaAvg * 1.37)
+                            else if (lumaAvg >= picLumaAvg * (634 / 502.) && lumaAvg < picLumaAvg * (701 / 502.))
                                 qp_adj -= 3;
-                            else if (lumaAvg >= picLumaAvg * 1.37 && lumaAvg < picLumaAvg * 1.5)
+                            else if (lumaAvg >= picLumaAvg * (701 / 502.) && lumaAvg < picLumaAvg * (767 / 502.))
                                 qp_adj -= 4;
-                            else if (lumaAvg >= picLumaAvg * 1.5 && lumaAvg < picLumaAvg * 1.63)
+                            else if (lumaAvg >= picLumaAvg * (767 / 502.) && lumaAvg < picLumaAvg * (834 / 502.))
                                 qp_adj -= 5;
-                            else if (lumaAvg >= picLumaAvg * 1.63)
+                            else if (lumaAvg >= picLumaAvg * (834 / 502.))
                                 qp_adj -= 6;
 
                             /*
