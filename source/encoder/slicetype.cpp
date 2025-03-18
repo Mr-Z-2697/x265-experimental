@@ -616,13 +616,14 @@ void LookaheadTLD::calcAdaptiveQuantFrame(Frame *curFrame, x265_param* param)
                             // uint32_t picLumaMax = curFrame->m_fencPic->m_maxLumaLevel;
                             // uint32_t picLumaMin = curFrame->m_fencPic->m_minLumaLevel;
 
-                            // I just imagine pic luma avg will be like 502
+                            // I just imagine pic luma avg be like 502
                             if (lumaAvg < picLumaAvg * (301 / 502.))
                                 qp_adj += 3;
                             else if (lumaAvg >= picLumaAvg * (301 / 502.) && lumaAvg < picLumaAvg * (367 / 502.))
                                 qp_adj += 2;
                             else if (lumaAvg >= picLumaAvg * (367 / 502.) && lumaAvg < picLumaAvg * (434 / 502.))
                                 qp_adj += 1;
+                            /*
                             else if (lumaAvg >= picLumaAvg && lumaAvg < picLumaAvg * (567 / 502.))
                                 qp_adj -= 1;
                             else if (lumaAvg >= picLumaAvg * (567 / 502.) && lumaAvg < picLumaAvg * (634 / 502.))
@@ -635,6 +636,7 @@ void LookaheadTLD::calcAdaptiveQuantFrame(Frame *curFrame, x265_param* param)
                                 qp_adj -= 5;
                             else if (lumaAvg >= picLumaAvg * (834 / 502.))
                                 qp_adj -= 6;
+                            */
 
                             /*
                             if (lumaAvg < 301)
@@ -643,7 +645,8 @@ void LookaheadTLD::calcAdaptiveQuantFrame(Frame *curFrame, x265_param* param)
                                 qp_adj += 2;
                             else if (lumaAvg >= 367 && lumaAvg < 434)
                                 qp_adj += 1;
-                            else if (lumaAvg >= 501 && lumaAvg < 567)
+                            */
+                            if (lumaAvg >= 501 && lumaAvg < 567)
                                 qp_adj -= 1;
                             else if (lumaAvg >= 567 && lumaAvg < 634)
                                 qp_adj -= 2;
@@ -655,7 +658,6 @@ void LookaheadTLD::calcAdaptiveQuantFrame(Frame *curFrame, x265_param* param)
                                 qp_adj -= 5;
                             else if (lumaAvg >= 834)
                                 qp_adj -= 6;
-                            */
                         }
                         if (quantOffsets != NULL)
                             qp_adj += quantOffsets[blockXY];
