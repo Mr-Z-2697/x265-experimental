@@ -614,16 +614,20 @@ void LookaheadTLD::calcAdaptiveQuantFrame(Frame *curFrame, x265_param* param)
                             uint32_t lumaAvg = sum / (loopIncr * loopIncr);
                             double picLumaAvg = curFrame->m_fencPic->m_avgLumaLevel;
                             // uint32_t picLumaMax = curFrame->m_fencPic->m_maxLumaLevel;
-                            // uint32_t picLumaMin = curFrame->m_fencPic->m_minLumaLevel;
+                            uint32_t picLumaMin = curFrame->m_fencPic->m_minLumaLevel;
 
                             // I just imagine pic luma avg be like 502
+                            double lumaStep1 = (picLumaAvg - picLumaMin) * ((301 - 64) / (502. - 64)) + picLumaMin;
+                            double lumaStep2 = (picLumaAvg - picLumaMin) * ((367 - 64) / (502. - 64)) + picLumaMin;
+                            double lumaStep3 = (picLumaAvg - picLumaMin) * ((434 - 64) / (502. - 64)) + picLumaMin;
+
                             if (picLumaAvg < 502)
                             {
-                                if (lumaAvg < picLumaAvg * (301 / 502.))
+                                if (lumaAvg < lumaStep1)
                                     qp_adj += 3;
-                                else if (lumaAvg >= picLumaAvg * (301 / 502.) && lumaAvg < picLumaAvg * (367 / 502.))
+                                else if (lumaAvg >= lumaStep1 && lumaAvg < lumaStep2)
                                     qp_adj += 2;
-                                else if (lumaAvg >= picLumaAvg * (367 / 502.) && lumaAvg < picLumaAvg * (434 / 502.))
+                                else if (lumaAvg >= lumaStep2 && lumaAvg < lumaStep3)
                                     qp_adj += 1;
                             }
                             else
