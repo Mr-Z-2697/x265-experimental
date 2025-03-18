@@ -610,8 +610,7 @@ void LookaheadTLD::calcAdaptiveQuantFrame(Frame *curFrame, x265_param* param)
 
                         if (param->bHDR10Opt)
                         {
-                            uint32_t sum = lumaSumCu(curFrame, blockX, blockY, param->rc.qgSize);
-                            uint32_t lumaAvg = sum / (loopIncr * loopIncr);
+                            uint32_t lumaAvg = (uint32_t)round(curFrame->m_fencPic->m_avgLumaLevel);
                             if (lumaAvg < 301)
                                 qp_adj += 3;
                             else if (lumaAvg >= 301 && lumaAvg < 367)
