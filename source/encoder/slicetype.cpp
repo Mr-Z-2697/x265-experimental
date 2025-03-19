@@ -621,8 +621,8 @@ void LookaheadTLD::calcAdaptiveQuantFrame(Frame *curFrame, x265_param* param)
                             double lumaStep2 = (picLumaAvg - picLumaMin) * ((367 - 64) / (502. - 64)) + picLumaMin;
                             double lumaStep3 = (picLumaAvg - picLumaMin) * ((434 - 64) / (502. - 64)) + picLumaMin;
 
-                            // ~ 5 nits
-                            if (picLumaAvg < 282)
+                            // ~ 1.5 nits
+                            if (picLumaAvg < 215)
                             {
                                 if (lumaAvg < lumaStep1)
                                     qp_adj += 3;
