@@ -90,6 +90,7 @@ x265_encoder *x265_encoder_open(x265_param *p)
         x265_log(p, X265_LOG_ERROR, "Build error, internal bit depth mismatch\n");
         return NULL;
     }
+    initLambda();
 
     Encoder* encoder = new Encoder;
     encoder->m_paramBase[0] = PARAM_NS::x265_param_alloc();
