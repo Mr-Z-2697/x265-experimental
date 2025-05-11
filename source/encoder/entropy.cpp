@@ -1820,7 +1820,7 @@ void Entropy::codePredWeightTable(const Slice& slice)
                             WRITE_SVLC(deltaWeight, "delta_chroma_weight_lX");
 
                             int pred = (128 - ((128 * wp[plane].inputWeight) >> (wp[plane].log2WeightDenom)));
-                            int deltaChroma = (wp[plane].inputOffset - pred);
+                            int deltaChroma = x265_clip3(-512, 511, (wp[plane].inputOffset - pred));
                             WRITE_SVLC(deltaChroma, "delta_chroma_offset_lX");
                         }
                     }
