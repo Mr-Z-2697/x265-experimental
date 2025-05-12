@@ -467,7 +467,7 @@ void weightAnalyse(Slice& slice, Frame& frame, x265_param& param)
             }
 
             if (!bFound || (minscale == (1 << mindenom) && minoff == 0) || (float)minscore / origscore > 0.998f ||
-                ((128*minscale) >> mindenom) > (512 - 1 - minscale) )
+                (plane && ((128*minscale) >> mindenom) > (512 - 1 - minscale)) )
             {
                 SET_WEIGHT(weights[plane], false, 1 << denom, denom, 0);
             }
