@@ -466,8 +466,11 @@ void weightAnalyse(Slice& slice, Frame& frame, x265_param& param)
                 }
             }
 
+            int predTemp = (128 - ((128 * minscale) >> (mindenom)));
+            int deltaChromaTemp = minoff - predTemp;
+
             if (!bFound || (minscale == (1 << mindenom) && minoff == 0) || (float)minscore / origscore > 0.998f ||
-                (plane && ((128*minscale) >> mindenom) > (512 - 1 - minoff)) )
+                (plane && (deltaChromaTemp < -512 || deltaChromaTemp > 511)) )
             {
                 SET_WEIGHT(weights[plane], false, 1 << denom, denom, 0);
             }
