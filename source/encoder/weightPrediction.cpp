@@ -307,7 +307,7 @@ void weightAnalyse(Slice& slice, Frame& frame, x265_param& param)
             if (plane)
             {
                 int scale = x265_clip3(0, 255, (int)(guessScale[plane] * (1 << denom) + 0.5f));
-                if (scale > 127 || ((128*scale) >> denom) > (512 - 1 - 128))
+                if (scale > 127)
                     continue;
                 weights[plane].inputWeight = scale;
             }
@@ -466,7 +466,8 @@ void weightAnalyse(Slice& slice, Frame& frame, x265_param& param)
                 }
             }
 
-            if (!bFound || (minscale == (1 << mindenom) && minoff == 0) || (float)minscore / origscore > 0.998f)
+            if (!bFound || (minscale == (1 << mindenom) && minoff == 0) || (float)minscore / origscore > 0.998f ||
+                ((128*minscale) >> mindenom) > (512 - 1 - minscale) )
             {
                 SET_WEIGHT(weights[plane], false, 1 << denom, denom, 0);
             }
