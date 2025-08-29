@@ -911,19 +911,19 @@ void CUData::getAllowedChromaDir(uint32_t absPartIdx, uint32_t* modeList) const
     switch(NUM_CHROMA_MODE)
     {
         case 5:
-            modeList[4] = DM_CHROMA_IDX;
+            modeList[4] = DC_IDX;
             [[fallthrough]];
         case 4:
-            modeList[3] = DC_IDX;
+            modeList[3] = HOR_IDX;
             [[fallthrough]];
         case 3:
-            modeList[2] = HOR_IDX;
+            modeList[2] = VER_IDX;
             [[fallthrough]];
         case 2:
-            modeList[1] = VER_IDX;
+            modeList[1] = PLANAR_IDX;
             [[fallthrough]];
         case 1:
-            modeList[0] = PLANAR_IDX;
+            modeList[0] = DM_CHROMA_IDX;
     }
 
     uint32_t lumaMode = m_lumaIntraDir[absPartIdx];
