@@ -1541,6 +1541,7 @@ sse_t Search::estIntraPredQT(Mode &intraMode, const CUGeom& cuGeom, const uint32
     {
         uint32_t bmode = 0;
 
+        intraMode.cu.m_lumaIntraDir[puIdx] = DC_IDX;
         if (intraMode.cu.m_lumaIntraDir[puIdx] != (uint8_t)ALL_IDX)
             bmode = intraMode.cu.m_lumaIntraDir[puIdx];
         else
