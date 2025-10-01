@@ -3088,7 +3088,7 @@ bool Lookahead::scenecut(Lowres **frames, int p0, int p1, bool bRealScenecut, in
     {
         int origmaxp1 = p0 + 1;
         /* Look ahead to avoid coding short flashes as scenecuts. */
-        origmaxp1 += X265_MAX(1, m_param->bframes);
+        origmaxp1 += m_param->bframes;
         int maxp1 = X265_MIN(origmaxp1, numFrames);
         bool fluctuate = false;
         bool noScenecuts = false;
