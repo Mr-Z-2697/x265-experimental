@@ -584,7 +584,7 @@ typedef enum
 #define X265_TU_LIMIT_DFS       2
 #define X265_TU_LIMIT_NEIGH     4
 
-#define X265_BFRAME_MAX         249 /* Lookahead - 1, values too high will cause malloc failure and encoder aborts. */
+#define X265_BFRAME_MAX         249 /* Lookahead - 1, values too high (than 16) will cause malloc failure and encoder aborts, depending on resolution. */
 #define X265_MAX_FRAME_THREADS  16
 
 #define X265_TYPE_AUTO          0x0000  /* Let x265 choose the right type */
