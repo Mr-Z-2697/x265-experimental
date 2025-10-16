@@ -3170,7 +3170,7 @@ bool Lookahead::scenecut(Lowres **frames, int p0, int p1, bool bRealScenecut, in
        analysis detected scenecuts which were later nulled due to scene transitioning, in which 
        case do not return a true scenecut for this frame */
 
-    if (!frames[p1]->bScenecut)
+    if (!frames[p1]->bScenecut && m_param->bframes)
         return false;
 
     return scenecutInternal(frames, p0, p1, bRealScenecut);
