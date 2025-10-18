@@ -3088,74 +3088,31 @@ bool Lookahead::scenecut(Lowres **frames, int p0, int p1, bool bRealScenecut, in
     {
         int origmaxp1 = p0 + 1;
         /* Look ahead to avoid coding short flashes as scenecuts. */
-        origmaxp1 += m_param->bframes;
+        if(m_param->bFrameAdaptive == X265_B_ADAPT_TRELLIS)
+            /* Don't analyse any more frames than the trellis would have covered. */
+            origmaxp1 += m_param->bframes;
+        else
+            origmaxp1++;
         int maxp1 = X265_MIN(origmaxp1, numFrames);
-        bool fluctuate = false;
-        bool noScenecuts = false;
-        int64_t avgSatdCost = 0;
-        if (frames[p0]->costEst[p1 - p0][0] > -1)
-            avgSatdCost = frames[p0]->costEst[p1 - p0][0];
-        int cnt = 1;
+
         /* Where A and B are scenes: AAAAAABBBAAAAAA
          * If BBB is shorter than (maxp1-p0), it is detected as a flash
          * and not considered a scenecut. */
-
-        for (int cp1 = p1; cp1 <= maxp1; cp1++)
-        {
-            if (!scenecutInternal(frames, p0, cp1, false))
-            {
+        for(int curp1 = p1; curp1 <= maxp1; curp1++)
+            if(!scenecutInternal(frames, p0, curp1, 0))
                 /* Any frame in between p0 and cur_p1 cannot be a real scenecut. */
-                for (int i = cp1; i > p0; i--)
-                {
+                for( int i = curp1; i > p0; i-- )
                     frames[i]->bScenecut = false;
-                    noScenecuts = false;
-                }
-            }
-            else if (scenecutInternal(frames, cp1 - 1, cp1, false))
-            {
-                /* If current frame is a Scenecut from p0 frame as well as Scenecut from
-                 * preceeding frame, mark it as a Scenecut */
-                frames[cp1]->bScenecut = true;
-                noScenecuts = true;
-            }
 
-            /* compute average satdcost of all the frames in the mini-gop to confirm 
-             * whether there is any great fluctuation among them to rule out false positives */
-            X265_CHECK(frames[cp1]->costEst[cp1 - p0][0]!= -1, "costEst is not done \n");
-            avgSatdCost += frames[cp1]->costEst[cp1 - p0][0];
-            cnt++;
-        }
-
-        /* Identify possible scene fluctuations by comparing the satd cost of the frames.
-         * This could denote the beginning or ending of scene transitions.
-         * During a scene transition(fade in/fade outs), if fluctuate remains false,
-         * then the scene had completed its transition or stabilized */
-        if (noScenecuts)
-        {
-            fluctuate = false;
-            avgSatdCost /= cnt;
-            for (int i = p1; i <= maxp1; i++)
-            {
-                int64_t curCost  = frames[i]->costEst[i - p0][0];
-                int64_t prevCost = frames[i - 1]->costEst[i - 1 - p0][0];
-                if (fabs((double)(curCost - avgSatdCost)) > 0.1 * avgSatdCost || 
-                    fabs((double)(curCost - prevCost)) > 0.1 * prevCost)
-                {
-                    fluctuate = true;
-                    if (!m_isSceneTransition && frames[i]->bScenecut)
-                    {
-                        m_isSceneTransition = true;
-                        /* just mark the first scenechange in the scene transition as a scenecut. */
-                        for (int j = i + 1; j <= maxp1; j++)
-                            frames[j]->bScenecut = false;
-                        break;
-                    }
-                }
-                frames[i]->bScenecut = false;
-            }
-        }
-        if (!fluctuate && !noScenecuts)
-            m_isSceneTransition = false; /* Signal end of scene transitioning */
+        /* Where A-F are scenes: AAAAABBCCDDEEFFFFFF
+         * If each of BB ... EE are shorter than (maxp1-p0), they are
+         * detected as flashes and not considered scenecuts.
+         * Instead, the first F frame becomes a scenecut.
+         * If the video ends before F, no frame becomes a scenecut. */
+        for(int curp0 = p0; curp0 <= maxp1; curp0++)
+            if(0 || (curp0 < maxp1 && scenecutInternal(frames, curp0, maxp1, 0)))
+                /* If cur_p0 is the p0 of a scenecut, it cannot be the p1 of a scenecut. */
+                    frames[curp0]->bScenecut = false;
     }
 
     if (m_param->csvLogLevel >= 2)
@@ -3170,7 +3127,7 @@ bool Lookahead::scenecut(Lowres **frames, int p0, int p1, bool bRealScenecut, in
        analysis detected scenecuts which were later nulled due to scene transitioning, in which 
        case do not return a true scenecut for this frame */
 
-    if (!frames[p1]->bScenecut && m_param->bframes)
+    if (!frames[p1]->bScenecut)
         return false;
 
     return scenecutInternal(frames, p0, p1, bRealScenecut);
@@ -3190,8 +3147,8 @@ bool Lookahead::scenecutInternal(Lowres **frames, int p0, int p1, bool bRealScen
     float threshMin = (float)(threshMax * 0.25);
     double bias = m_param->scenecutBias;
 
-    if (bRealScenecut)
-    {
+    // if (bRealScenecut)
+    // {
         if (m_param->keyframeMin == m_param->keyframeMax)
             threshMin = threshMax;
         if (gopSize <= m_param->keyframeMin / 4 || m_param->bIntraRefresh)
@@ -3205,15 +3162,18 @@ bool Lookahead::scenecutInternal(Lowres **frames, int p0, int p1, bool bRealScen
                 * (gopSize - m_param->keyframeMin)
                 / (m_param->keyframeMax - m_param->keyframeMin);
         }
-    }
+    // }
     bool res = pcost >= (1.0 - bias) * icost;
     if (res && bRealScenecut)
     {
         int imb = frame->intraMbs[p1 - p0];
         int pmb = m_8x8Blocks - imb;
+        frame->bScenecut = true;
         x265_log(m_param, X265_LOG_DEBUG, "scene cut at %d Icost:%d Pcost:%d ratio:%.4f bias:%.4f gop:%d (imb:%d pmb:%d)\n",
                  frame->frameNum, icost, pcost, 1. - (double)pcost / icost, bias, gopSize, imb, pmb);
     }
+    else
+        frame->bScenecut = false;
     return res;
 }
 
@@ -3352,6 +3312,7 @@ bool Lookahead::detectHistBasedSceneChange(Lowres **frames, int p0, int p1, int 
 
 bool Lookahead::histBasedScenecut(Lowres **frames, int p0, int p1, int numFrames)
 {
+    frames[p1]->bScenecut = false;
     /* Only do analysis during a normal scenecut check. */
     if (m_param->bframes)
     {

@@ -1605,7 +1605,7 @@ int Encoder::encode(const x265_picture* pic_in, x265_picture* pic_out)
                 inFrame[layer]->m_encodeStartTime = x265_mdate();
                 /* Set lowres scencut and satdCost here to aovid overwriting ANALYSIS_READ
                    decision by lowres init*/
-                inFrame[layer]->m_lowres.bScenecut = false;
+                inFrame[layer]->m_lowres.bScenecut = true;
                 inFrame[layer]->m_lowres.satdCost = (int64_t)-1;
                 inFrame[layer]->m_lowresInit = false;
                 inFrame[layer]->m_isInsideWindow = 0;

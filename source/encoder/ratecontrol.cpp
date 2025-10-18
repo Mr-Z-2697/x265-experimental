@@ -1422,7 +1422,7 @@ int RateControl::rateControlStart(Frame* curFrame, RateControlEntry* rce, Encode
     m_isFirstMiniGop = m_sliceType == I_SLICE ? true : m_isFirstMiniGop;
     if (curFrame->m_lowres.bScenecut)
     {
-        m_isSceneTransition = true;
+        // m_isSceneTransition = true;
         rce->scenecut = true;
         m_lastPredictorReset = rce->encodeOrder;
 
