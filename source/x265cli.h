@@ -183,7 +183,6 @@ static const struct option long_options[] =
     { "aq-mode",        required_argument, NULL, 0 },
     { "aq1const",       required_argument, NULL, 0 },
     { "aq2const",       required_argument, NULL, 0 },
-    { "aq-mode",        required_argument, NULL, 0 },
     { "aq-strength",    required_argument, NULL, 0 },
     { "sbrc",                 no_argument, NULL, 0 },
     { "no-sbrc",              no_argument, NULL, 0 },
