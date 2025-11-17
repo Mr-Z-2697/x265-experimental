@@ -308,6 +308,8 @@ void x265_param_default(x265_param* param)
     param->rc.rateControlMode = X265_RC_CRF;
     param->rc.qp = 32;
     param->rc.aqMode = X265_AQ_AUTO_VARIANCE;
+    param->rc.aq1const = 6969.f;
+    param->rc.aq2const = 6969.f;
     param->rc.hevcAq = 0;
     param->rc.qgSize = 32;
     param->rc.aqStrength = 1.0;
@@ -866,6 +868,8 @@ int x265_zone_param_parse(x265_param* p, const char* name, const char* value)
         p->rc.rateControlMode = X265_RC_ABR;
     }
     OPT("aq-mode") p->rc.aqMode = atoi(value);
+    OPT("aq1const") p->rc.aq1const = atof(value);
+    OPT("aq2const") p->rc.aq2const = atof(value);
     OPT("aq-strength") p->rc.aqStrength = atof(value);
     OPT("nr-intra") p->noiseReductionIntra = atoi(value);
     OPT("nr-inter") p->noiseReductionInter = atoi(value);
@@ -2835,6 +2839,8 @@ void x265_copy_params(x265_param* dst, x265_param* src)
     dst->rc.rfConstant = src->rc.rfConstant;
     dst->rc.qpStep = src->rc.qpStep;
     dst->rc.aqMode = src->rc.aqMode;
+    dst->rc.aq1const = src->rc.aq1const;
+    dst->rc.aq2const = src->rc.aq2const;
     dst->rc.aqStrength = src->rc.aqStrength;
     dst->rc.vbvBufferSize = src->rc.vbvBufferSize;
     dst->rc.vbvMaxBitrate = src->rc.vbvMaxBitrate;

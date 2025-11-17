@@ -1728,6 +1728,9 @@ typedef struct x265_param
          * generally improves. Default: X265_AQ_AUTO_VARIANCE */
         int       aqMode;
 
+        float aq1const;
+        float aq2const;
+
         /*
          * Enable adaptive quantization.
          * It scales the quantization step size according to the spatial activity of one
