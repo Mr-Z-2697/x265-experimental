@@ -1730,6 +1730,7 @@ typedef struct x265_param
 
         float aq1const;
         float aq2const;
+        float aq2pow;
 
         /*
          * Enable adaptive quantization.

@@ -455,7 +455,8 @@ void LookaheadTLD::calcAdaptiveQuantFrame(Frame *curFrame, x265_param* param)
     int maxCol = curFrame->m_fencPic->m_picWidth;
     int maxRow = curFrame->m_fencPic->m_picHeight;
     int blockCount, loopIncr;
-    float modeOneConst, modeTwoConst;
+    float modeOneConst, modeTwoConst, modeTwoPow;
+    modeTwoPow = param->rc.aq2pow==6969.f ? 0.1 : param->rc.aq2pow;
     if (param->rc.qgSize == 8)
     {
         blockCount = curFrame->m_lowres.maxBlocksInRowFullRes * curFrame->m_lowres.maxBlocksInColFullRes;
@@ -562,7 +563,7 @@ void LookaheadTLD::calcAdaptiveQuantFrame(Frame *curFrame, x265_param* param)
                                 }
                             }
                             else
-                                qp_adj = pow(energy * bit_depth_correction + 1, 0.1);
+                                qp_adj = pow(energy * bit_depth_correction + 1, modeTwoPow);
                             curFrame->m_lowres.qpCuTreeOffset[blockXY] = qp_adj;
                             avg_adj += qp_adj;
                             avg_adj_pow2 += qp_adj * qp_adj;
