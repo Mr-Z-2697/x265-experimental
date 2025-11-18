@@ -868,8 +868,6 @@ int x265_zone_param_parse(x265_param* p, const char* name, const char* value)
         p->rc.rateControlMode = X265_RC_ABR;
     }
     OPT("aq-mode") p->rc.aqMode = atoi(value);
-    OPT("aq1const") p->rc.aq1const = atof(value);
-    OPT("aq2const") p->rc.aq2const = atof(value);
     OPT("aq-strength") p->rc.aqStrength = atof(value);
     OPT("nr-intra") p->noiseReductionIntra = atoi(value);
     OPT("nr-inter") p->noiseReductionInter = atoi(value);
@@ -1175,6 +1173,8 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
     OPT("cplxblur") p->rc.complexityBlur = atof(value);
     OPT("qblur") p->rc.qblur = atof(value);
     OPT("aq-mode") p->rc.aqMode = atoi(value);
+    OPT("aq1const") p->rc.aq1const = atof(value);
+    OPT("aq2const") p->rc.aq2const = atof(value);
     OPT("aq-strength") p->rc.aqStrength = atof(value);
     OPT("vbv-maxrate") p->rc.vbvMaxBitrate = atoi(value);
     OPT("vbv-bufsize") p->rc.vbvBufferSize = atoi(value);
