@@ -1782,8 +1782,6 @@ int x265_check_params(x265_param* param)
           "Lookahead slices must between 0 and 16");
     CHECK(param->rc.aqMode < X265_AQ_NONE || X265_AQ_EDGE < param->rc.aqMode,
           "Aq-Mode is out of range");
-    CHECK(param->rc.aqStrength < 0 || param->rc.aqStrength > 3,
-          "Aq-Strength is out of range");
     CHECK(param->rc.qpAdaptationRange < 1.0f || param->rc.qpAdaptationRange > 6.0f,
         "qp adaptation range is out of range");
     CHECK(param->deblockingFilterTCOffset < -6 || param->deblockingFilterTCOffset > 6,
