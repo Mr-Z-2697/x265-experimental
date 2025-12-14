@@ -1977,7 +1977,7 @@ void FrameEncoder::processRowEncoder(int intRow, ThreadLocalData& tld, int layer
             rowCount = X265_MIN(m_refLagRows / m_param->maxSlices, maxRows - 1);
     }
 
-    if (rowInSlice == rowCount)
+    if (row == rowCount)
     {
         m_rowSliceTotalBits[sliceId] = 0;
         if (bIsVbv && !(m_param->rc.bEnableConstVbv && m_param->bEnableWavefront))
