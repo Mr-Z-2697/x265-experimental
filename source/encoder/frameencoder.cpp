@@ -1964,9 +1964,9 @@ void FrameEncoder::processRowEncoder(int intRow, ThreadLocalData& tld, int layer
      * after half the frame is encoded, but after this initial period we update
      * after refLagRows (the number of rows reference frames must have completed
      * before referencees may begin encoding) */
-    if ((!layer) && (m_param->rc.rateControlMode == X265_RC_ABR || bIsVbv))
+    uint32_t rowCount = 0;
+    if ((!layer) && (m_param->rc.rateControlMode == X265_RC_ABR))
     {
-        uint32_t rowCount = 0;
         uint32_t maxRows = m_sliceBaseRow[sliceId + 1] - m_sliceBaseRow[sliceId];
 
         if (!m_rce.encodeOrder)
@@ -1975,33 +1975,34 @@ void FrameEncoder::processRowEncoder(int intRow, ThreadLocalData& tld, int layer
             rowCount = X265_MIN((maxRows + 1) / 2, maxRows - 1);
         else
             rowCount = X265_MIN(m_refLagRows / m_param->maxSlices, maxRows - 1);
+    }
 
-        if (rowInSlice == rowCount)
+    if (rowInSlice == rowCount)
+    {
+        m_rowSliceTotalBits[sliceId] = 0;
+        if (bIsVbv && !(m_param->rc.bEnableConstVbv && m_param->bEnableWavefront))
         {
-            m_rowSliceTotalBits[sliceId] = 0;
-            if (bIsVbv && !(m_param->rc.bEnableConstVbv && m_param->bEnableWavefront))
-            {
-                for (uint32_t i = m_sliceBaseRow[sliceId]; i < rowCount + m_sliceBaseRow[sliceId]; i++)
-                    m_rowSliceTotalBits[sliceId] += curEncData.m_rowStat[i].encodedBits;
-            }
-            else
-            {
-                uint32_t startAddr = m_sliceBaseRow[sliceId] * numCols;
-                uint32_t finishAddr = startAddr + rowCount * numCols;
-                
-                for (uint32_t cuAddr = startAddr; cuAddr < finishAddr; cuAddr++)
-                    m_rowSliceTotalBits[sliceId] += curEncData.m_cuStat[cuAddr].totalBits;
-            }
+            for (uint32_t i = m_sliceBaseRow[sliceId]; i < rowCount + m_sliceBaseRow[sliceId]; i++)
+                m_rowSliceTotalBits[sliceId] += curEncData.m_rowStat[i].encodedBits;
+        }
+        else
+        {
+            uint32_t startAddr = m_sliceBaseRow[sliceId] * numCols;
+            uint32_t finishAddr = startAddr + rowCount * numCols;
+            
+            for (uint32_t cuAddr = startAddr; cuAddr < finishAddr; cuAddr++)
+                m_rowSliceTotalBits[sliceId] += curEncData.m_cuStat[cuAddr].totalBits;
+        }
 
-            if (ATOMIC_INC(&m_sliceCnt) == (int)m_param->maxSlices)
-            {
-                m_rce.rowTotalBits = 0;
-                for (uint32_t i = 0; i < m_param->maxSlices; i++)
-                    m_rce.rowTotalBits += m_rowSliceTotalBits[i];
-                m_top->m_rateControl->rateControlUpdateStats(&m_rce);
-            }
+        if (ATOMIC_INC(&m_sliceCnt) == (int)m_param->maxSlices)
+        {
+            m_rce.rowTotalBits = 0;
+            for (uint32_t i = 0; i < m_param->maxSlices; i++)
+                m_rce.rowTotalBits += m_rowSliceTotalBits[i];
+            m_top->m_rateControl->rateControlUpdateStats(&m_rce);
         }
     }
+    // }
 
     /* flush row bitstream (if WPP and no SAO) or flush frame if no WPP and no SAO */
     /* end_of_sub_stream_one_bit / end_of_slice_segment_flag */
