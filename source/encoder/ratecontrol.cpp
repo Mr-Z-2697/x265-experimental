@@ -2445,10 +2445,13 @@ void RateControl::rateControlUpdateStats(RateControlEntry* rce)
 
     /* do not allow the next frame to enter rateControlStart() until this
      * frame has updated its mid-frame statistics */
-    m_startEndOrder.incr();
+    if (m_param->rc.rateControlMode == X265_RC_ABR || m_isVbv)
+    {
+        m_startEndOrder.incr();
 
-    if (rce->encodeOrder < m_param->frameNumThreads - 1)
-        m_startEndOrder.incr(); // faked rateControlEnd calls for negative frames
+        if (rce->encodeOrder < m_param->frameNumThreads - 1)
+            m_startEndOrder.incr(); // faked rateControlEnd calls for negative frames
+    }
 }
 
 void RateControl::checkAndResetABR(RateControlEntry* rce, bool isFrameDone)
