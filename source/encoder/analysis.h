@@ -236,6 +236,8 @@ protected:
     /* check whether current mode is the new best */
     inline void checkBestMode(Mode& mode, uint32_t depth)
     {
+        if (mode.cu.isSkipped(0))
+            mode.rdCost = x265_clip3(0., double(MAX_INT64 - 1), pow(mode.rdCost, m_param->dynamicRd));
         ModeDepth& md = m_modeDepth[depth];
         if (md.bestMode)
         {

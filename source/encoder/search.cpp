@@ -4704,6 +4704,8 @@ void Search::encodeResAndCalcRdInterCU(Mode& interMode, const CUGeom& cuGeom)
         else
             cbf0Cost = m_rdCost.calcRdCost(cbf0Dist, cbf0Bits);
 
+        cbf0Cost = x265_clip3(0., double(MAX_INT64 - 1), pow(cbf0Cost, m_param->dynamicRd));
+
         if (cbf0Cost < costs.rdcost)
         {
             cu.clearCbf();
@@ -5154,6 +5156,8 @@ void Search::estimateResidualQT(Mode& mode, const CUGeom& cuGeom, uint32_t absPa
                 // Now encoding the zero cbf without writing into bitstream, keeping m_fracBits unchanged. The same is valid for chroma.
                 uint64_t nullCostY = estimateNullCbfCost(zeroDistY, zeroEnergyY, tuDepth, TEXT_LUMA);
 
+                nullCostY = x265_clip3(0., double(MAX_INT64 - 1), pow(nullCostY, m_param->dynamicRd));
+
                 if (nullCostY < singleCostY)
                 {
                     cbfFlag[TEXT_LUMA][0] = 0;
@@ -5269,6 +5273,8 @@ void Search::estimateResidualQT(Mode& mode, const CUGeom& cuGeom, uint32_t absPa
                         {
                             //zero-cost calculation for chroma. This is an approximation
                             uint64_t nullCostC = estimateNullCbfCost(zeroDistC, zeroEnergyC, tuDepth, (TextType)chromaId);
+
+                            nullCostC = x265_clip3(0., double(MAX_INT64 - 1), pow(nullCostC, m_param->dynamicRd));
 
                             if (nullCostC < singleCostC)
                             {

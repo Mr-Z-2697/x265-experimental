@@ -260,7 +260,7 @@ void x265_param_default(x265_param* param)
     param->hmeRange[2] = 48;
     param->bSourceReferenceEstimation = 0;
     param->limitTU = 0;
-    param->dynamicRd = 0;
+    param->dynamicRd = 1;
 
     /* Loop Filter */
     param->bEnableLoopFilter = 1;
@@ -1755,8 +1755,6 @@ int x265_check_params(x265_param* param)
           "RD Level is out of range");
     CHECK(param->rdoqLevel < 0 || param->rdoqLevel > 2,
           "RDOQ Level is out of range");
-    CHECK(param->dynamicRd < 0 || param->dynamicRd > x265_ADAPT_RD_STRENGTH,
-          "Dynamic RD strength must be between 0 and 4");
     CHECK(param->recursionSkipMode > 2 || param->recursionSkipMode < 0,
           "Invalid Recursion skip mode. Valid modes 0,1,2");
     if (param->recursionSkipMode == EDGE_BASED_RSKIP)

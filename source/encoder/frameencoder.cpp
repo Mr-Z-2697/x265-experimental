@@ -1662,7 +1662,7 @@ void FrameEncoder::processRowEncoder(int intRow, ThreadLocalData& tld, int layer
             rowCoder.copyState(m_initSliceContext);
             rowCoder.loadContexts(m_rows[row - 1].bufferedEntropy);
         }
-        if (m_param->dynamicRd && (int32_t)(m_rce.qpaRc - m_rce.qpNoVbv) > 0)
+        if (0 && (int32_t)(m_rce.qpaRc - m_rce.qpNoVbv) > 0)
             ctu->m_vbvAffected = true;
 
         // Does all the CU analysis, returns best top level mode decision
