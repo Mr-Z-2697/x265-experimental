@@ -502,8 +502,18 @@ void Analysis::qprdRefine(const CUData& parentCTU, const CUGeom& cuGeom, int32_t
                 cuCost = md.bestMode->rdCost;
 
                 COPY2_IF_LT(bestCUCost, cuCost, bestCUQP, modCUQP);
-                if (cuCost >= cuPrevCost)
-                    failure++;
+                if (m_param->rdRefine < 2)
+                {
+                    if (cuCost < cuPrevCost)
+                        failure = 0;
+                    else
+                        failure++;
+                }
+                else
+                {
+                    if (cuCost >= cuPrevCost)
+                        failure++;
+                }
 
                 if (failure > threshold)
                     break;
@@ -2914,7 +2924,7 @@ void Analysis::recodeCU(const CUData& parentCTU, const CUGeom& cuGeom, int32_t q
                 }
                 motionCompensation(mode.cu, pu, mode.predYuv, true, (m_csp != X265_CSP_I400 && m_frame->m_fencPic->m_picCsp != X265_CSP_I400));
             }
-            if (!m_param->interRefine && !m_param->bDynamicRefine && parentCTU.isSkipped(cuGeom.absPartIdx) && m_param->rdRefine < 2)
+            if (!m_param->interRefine && !m_param->bDynamicRefine && parentCTU.isSkipped(cuGeom.absPartIdx) && m_param->rdRefine < 3)
                 encodeResAndCalcRdSkipCU(mode);
             else
                 encodeResAndCalcRdInterCU(mode, cuGeom);
