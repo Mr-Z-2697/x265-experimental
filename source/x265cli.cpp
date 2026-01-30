@@ -133,7 +133,7 @@ namespace X265_NS {
            "                                     - 0: disabled.\n"
            "                                     - 1: original behavior.\n"
            "                                     - 2: proposed fix.\n"
-           "                                     - 3: try not to code skip CU.\n"
+           "                                     - 3: 2 + try not to code skip CU.\n"
            "                                 Default %d\n", param->rdRefine);
         H0("   --[no-]early-skip             Enable early SKIP detection. Default %s\n", OPT(param->bEnableEarlySkip));
         H0("   --rskip <Integer>             Enable recursion skip for an early exit from CTU analysis during inter-prediction.\n"
