@@ -54,8 +54,8 @@ namespace X265_NS {
 #define H0(...) bufwritten += snprintf(buf + bufwritten, bufsize - bufwritten, __VA_ARGS__)
 #define H1(...) if (level >= X265_LOG_DEBUG) bufwritten += snprintf(buf + bufwritten, bufsize - bufwritten, __VA_ARGS__)
 #else
-#define H0(...) bufwritten += snprintf_s(buf + bufwritten, bufsize - bufwritten, __VA_ARGS__)
-#define H1(...) if (level >= X265_LOG_DEBUG) bufwritten += snprintf_s(buf + bufwritten, bufsize - bufwritten, __VA_ARGS__)
+#define H0(...) bufwritten += _snprintf_s(buf + bufwritten, bufsize - bufwritten, bufsize - bufwritten, __VA_ARGS__)
+#define H1(...) if (level >= X265_LOG_DEBUG) bufwritten += _snprintf_s(buf + bufwritten, bufsize - bufwritten, bufsize - bufwritten, __VA_ARGS__)
 #endif
 
         H0("\nSyntax: x265 [options] infile [-o] outfile\n");
