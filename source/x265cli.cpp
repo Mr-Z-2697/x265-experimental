@@ -46,8 +46,14 @@ namespace X265_NS {
         int level = param->logLevel;
 
 #define OPT(value) (value ? "enabled" : "disabled")
+
+#ifndef _WIN32
 #define H0 printf
 #define H1 if (level >= X265_LOG_DEBUG) printf
+#else
+#define H0 printf_s
+#define H1 if (level >= X265_LOG_DEBUG) printf_s
+#endif
 
         H0("\nSyntax: x265 [options] infile [-o] outfile\n");
         H0("    infile can be YUV or Y4M\n");
