@@ -132,6 +132,8 @@ public:
     SliceType   m_sliceType;     /* Current frame type */
     int         m_ncu;           /* number of CUs in a frame */
     int         m_qp;            /* updated qp for current frame */
+    int         m_lowresCuWidth;
+    int         m_lowresCuHeight;
 
     /*Zone reconfiguration*/
     double*     m_relativeComplexity;

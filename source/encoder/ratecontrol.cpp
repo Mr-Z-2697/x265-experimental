@@ -185,9 +185,9 @@ RateControl::RateControl(x265_param& p, Encoder *top)
 {
     m_param = &p;
     m_top = top;
-    int lowresCuWidth = ((m_param->sourceWidth / 2) + X265_LOWRES_CU_SIZE - 1) >> X265_LOWRES_CU_BITS;
-    int lowresCuHeight = ((m_param->sourceHeight / 2) + X265_LOWRES_CU_SIZE - 1) >> X265_LOWRES_CU_BITS;
-    m_ncu = lowresCuWidth * lowresCuHeight;
+    m_lowresCuWidth = ((m_param->sourceWidth / 2) + X265_LOWRES_CU_SIZE - 1) >> X265_LOWRES_CU_BITS;
+    m_lowresCuHeight = ((m_param->sourceHeight / 2) + X265_LOWRES_CU_SIZE - 1) >> X265_LOWRES_CU_BITS;
+    m_ncu = m_lowresCuWidth * m_lowresCuHeight;
 
     m_qCompress = (m_param->rc.cuTree && !m_param->rc.hevcAq) ? 1 : m_param->rc.qCompress;
 
@@ -806,9 +806,9 @@ bool RateControl::init(const SPS& sps)
                 m_cuTreeStats.srcDim[1] = m_param->sourceHeight;
             }
 
-            if (cuTree_rescale_init() < 0)
+            if (cuTreeRescaleInit() < 0)
             {
-                x265_log(m_param, X265_LOG_ERROR, "%s call cuTree_rescale_init error!\n", __FUNCTION__);
+                x265_log(m_param, X265_LOG_ERROR, "%s call cuTreeRescaleInit error!\n", __FUNCTION__);
                 return false;
             }
         }
