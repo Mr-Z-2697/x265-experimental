@@ -800,19 +800,17 @@ bool RateControl::init(const SPS& sps)
         }
         if (m_param->rc.cuTree && !m_cuTreeStats.qpBuffer[0])
         {
-            if (m_param->rc.qgSize == 8)
+            if (!m_param->rc.bStatRead)
             {
-                m_cuTreeStats.qpBuffer[0] = X265_MALLOC(uint16_t, m_ncu * 4 * sizeof(uint16_t));
-                if (m_param->bBPyramid && m_param->rc.bStatRead)
-                    m_cuTreeStats.qpBuffer[1] = X265_MALLOC(uint16_t, m_ncu * 4 * sizeof(uint16_t));
+                m_cuTreeStats.srcdim[0] = m_param->sourceWidth;
+                m_cuTreeStats.srcdim[1] = m_param->sourceHeight;
             }
-            else
+
+            if (cuTree_rescale_init() < 0)
             {
-                m_cuTreeStats.qpBuffer[0] = X265_MALLOC(uint16_t, m_ncu * sizeof(uint16_t));
-                if (m_param->bBPyramid && m_param->rc.bStatRead)
-                    m_cuTreeStats.qpBuffer[1] = X265_MALLOC(uint16_t, m_ncu * sizeof(uint16_t));
+                x265_log(m_param, X265_LOG_ERROR, "%s call cuTree_rescale_init error!\n", __FUNCTION__);
+                return false;
             }
-            m_cuTreeStats.qpBufPos = -1;
         }
     }
     return true;
@@ -1784,6 +1782,137 @@ bool RateControl::fixUnderflow(int t0, int t1, double adjustment, double qscaleM
     return adjusted;
 }
 
+int RateControl::cuTreeRescaleInit()
+{
+    /* Use fractional QP array dimensions to compensate for edge padding */
+    float srcdim[2] = {m_cuTreeStats.srcDim[0] / 16.f, m_cuTreeStats.srcDim[1] / 16.f};
+    float dstdim[2] = {m_param->sourceWidth / 16.f,   m_param->sourceHeight/ 16.f};
+    int srcdimi[2] = {(int)ceil(srcdim[0]), (int)ceil(srcdim[1])};
+    int dstdimi[2] = {(int)ceil(dstdim[0]), (int)ceil(dstdim[1])};
+
+    m_cuTreeStats.srcCuCount = srcdimi[0] * srcdimi[1];
+    if (m_param->rc.qgSize == 8)
+        m_cuTreeStats.srcCuCount = m_cuTreeStats.srcCuCount * 4;
+
+    if (m_param->rc.qgSize == 8)
+    {
+        CHECKED_MALLOC(m_cuTreeStats.qpBuffer[0], uint16_t, m_cuTreeStats.srcCuCount * 4 * sizeof(uint16_t));
+        if (m_param->bBPyramid && m_param->rc.bStatRead)
+            CHECKED_MALLOC(m_cuTreeStats.qpBuffer[1], uint16_t, m_cuTreeStats.srcCuCount * 4 * sizeof(uint16_t));
+    }
+    else
+    {
+        CHECKED_MALLOC(m_cuTreeStats.qpBuffer[0], uint16_t, m_cuTreeStats.srcCuCount * sizeof(uint16_t));
+        if (m_param->bBPyramid && m_param->rc.bStatRead)
+            CHECKED_MALLOC(m_cuTreeStats.qpBuffer[1], uint16_t, m_cuTreeStats.srcCuCount * sizeof(uint16_t));
+    }
+    m_cuTreeStats.qpBufPos = -1;
+
+    m_cuTreeStats.bRescaleEnabled = 0;
+
+    /* No rescaling to do */
+    if (srcdimi[0] == dstdimi[0] && srcdimi[1] == dstdimi[1])
+        return 0;
+
+    m_cuTreeStats.bRescaleEnabled = 1;
+
+    /* Allocate intermediate scaling buffers */
+    CHECKED_MALLOC(m_cuTreeStats.scaleBuffer[0], double, srcdimi[0] * srcdimi[1]);
+    CHECKED_MALLOC(m_cuTreeStats.scaleBuffer[1], double, dstdimi[0] * srcdimi[1]);
+
+    /* Allocate and calculate resize filter parameters and coefficients */
+    for (int i = 0; i < 2; i++)
+    {
+        if (srcdim[i] > dstdim[i]) // downscale
+            m_cuTreeStats.filterSize[i] = 1 + (2 * srcdimi[i] + dstdimi[i] - 1) / dstdimi[i];
+        else                        // upscale
+            m_cuTreeStats.filterSize[i] = 3;
+
+        CHECKED_MALLOC(m_cuTreeStats.coeffs[i], float, m_cuTreeStats.filterSize[i] * dstdimi[i]);
+        CHECKED_MALLOC(m_cuTreeStats.pos[i], int, dstdimi[i]);
+
+        /* Initialize filter coefficients */
+        float inc = srcdim[i] / dstdim[i];
+        float dmul = inc > 1.f ? dstdim[i] / srcdim[i] : 1.f;
+        float dstinsrc = 0.5f * inc - 0.5f;
+        int filtersize = m_cuTreeStats.filterSize[i];
+        for (int j = 0; j < dstdimi[i]; j++)
+        {
+            int pos = dstinsrc - (filtersize - 2.f) * 0.5f;
+            float sum = 0.0;
+            m_cuTreeStats.pos[i][j] = pos;
+            for (int k = 0; k < filtersize; k++)
+            {
+                float d = fabs(pos + k - dstinsrc) * dmul;
+                float coeff = X265_MAX(1.f - d, 0);
+                m_cuTreeStats.coeffs[i][j * filtersize + k] = coeff;
+                sum += coeff;
+            }
+            sum = 1.0f / sum;
+            for (int k = 0; k < filtersize; k++)
+                m_cuTreeStats.coeffs[i][j * filtersize + k] *= sum;
+            dstinsrc += inc;
+        }
+    }
+
+    /* Write back actual qp array dimensions */
+    m_cuTreeStats.srcDim[0] = srcdimi[0];
+    m_cuTreeStats.srcDim[1] = srcdimi[1];
+    return 0;
+fail:
+    return -1;
+}
+
+void RateControl::cuTreeRescaleDestroy()
+{
+    for (int i = 0; i < 2; i++)
+    {
+        X265_FREE_ZERO(m_cuTreeStats.scaleBuffer[i]);
+        X265_FREE_ZERO(m_cuTreeStats.coeffs[i]);
+        X265_FREE_ZERO(m_cuTreeStats.pos[i]);
+    }
+}
+
+static __inline double tapfilter(double *src, int pos, int max, int stride, float *coeff, int filtersize)
+{
+    double sum = 0.f;
+    for (int i = 0; i < filtersize; i++, pos++)
+        sum += src[x265_clip3( 0, max-1, pos)*stride] * double(coeff[i]);
+    return sum;
+}
+
+void RateControl::cuTreeRescale(double *dst)
+{
+    double *input, *output;
+    int filtersize, stride, height;
+
+    /* H scale first */
+    input = m_cuTreeStats.scaleBuffer[0];
+    output = m_cuTreeStats.scaleBuffer[1];
+    filtersize = m_cuTreeStats.filterSize[0];
+    stride = m_cuTreeStats.srcDim[0];
+    height = m_cuTreeStats.srcDim[1];
+    for (int y = 0; y < height; y++, input += stride, output += m_lowresCuWidth)
+    {
+        float *coeff = m_cuTreeStats.coeffs[0];
+        for (int x = 0; x < m_lowresCuWidth; x++, coeff+=filtersize)
+            output[x] = tapfilter(input, m_cuTreeStats.pos[0][x], stride, 1, coeff, filtersize);
+    }
+
+    /* V scale next */
+    input = m_cuTreeStats.scaleBuffer[1];
+    output = dst;
+    filtersize = m_cuTreeStats.filterSize[1];
+    stride = m_lowresCuWidth;
+    height = m_cuTreeStats.srcDim[1];
+    for (int x = 0; x < m_lowresCuWidth; x++, input++, output++)
+    {
+        float *coeff = m_cuTreeStats.coeffs[1];
+        for (int y = 0; y < m_lowresCuHeight; y++, coeff+=filtersize)
+            output[y*stride] = tapfilter(input, m_cuTreeStats.pos[1][y], height, stride, coeff, filtersize);
+    }
+}
+
 bool RateControl::cuTreeReadFor2Pass(Frame* frame)
 {
     int index = m_encOrder[frame->m_poc];
@@ -1832,7 +1961,11 @@ bool RateControl::cuTreeReadFor2Pass(Frame* frame)
             }
             while(type != sliceTypeActual);
         }
-        primitives.fix8Unpack(frame->m_lowres.qpCuTreeOffset, m_cuTreeStats.qpBuffer[m_cuTreeStats.qpBufPos], ncu);
+        double *dst = m_cuTreeStats.bRescaleEnabled ? m_cuTreeStats.scaleBuffer[0] : frame->m_lowres.qpCuTreeOffset;
+        primitives.fix8Unpack(dst, m_cuTreeStats.qpBuffer[m_cuTreeStats.qpBufPos], ncu);
+
+        if (m_cuTreeStats.bRescaleEnabled)
+            cuTreeRescale(frame->m_lowres.qpCuTreeOffset);
         for (int i = 0; i < ncu; i++)
             frame->m_lowres.invQscaleFactor[i] = x265_exp2fix8(frame->m_lowres.qpCuTreeOffset[i]);
         m_cuTreeStats.qpBufPos--;
@@ -3406,6 +3539,7 @@ void RateControl::destroy()
     X265_FREE(m_encOrder);
     for (int i = 0; i < 2; i++)
         X265_FREE(m_cuTreeStats.qpBuffer[i]);
+    cuTreeRescaleDestroy();
     
     if (m_relativeComplexity)
         X265_FREE(m_relativeComplexity);
