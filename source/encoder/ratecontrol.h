@@ -264,7 +264,7 @@ public:
         int bRescaleEnabled;
         double *scaleBuffer[2]; /* Intermediate buffers */
         int filterSize[2];      /* filter size (H/V) */
-        float *coeffs[2];
+        double *coeffs[2];
         int *pos[2];
         int srcDim[2];          /* Source dimensions (W/H) */
     } m_cuTreeStats;
