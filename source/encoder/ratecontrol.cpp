@@ -802,8 +802,8 @@ bool RateControl::init(const SPS& sps)
         {
             if (!m_param->rc.bStatRead)
             {
-                m_cuTreeStats.srcdim[0] = m_param->sourceWidth;
-                m_cuTreeStats.srcdim[1] = m_param->sourceHeight;
+                m_cuTreeStats.srcDim[0] = m_param->sourceWidth;
+                m_cuTreeStats.srcDim[1] = m_param->sourceHeight;
             }
 
             if (cuTree_rescale_init() < 0)
