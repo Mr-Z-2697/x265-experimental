@@ -1828,27 +1828,27 @@ int RateControl::cuTreeRescaleInit()
         else                        // upscale
             m_cuTreeStats.filterSize[i] = 3;
 
-        CHECKED_MALLOC(m_cuTreeStats.coeffs[i], float, m_cuTreeStats.filterSize[i] * dstdimi[i]);
+        CHECKED_MALLOC(m_cuTreeStats.coeffs[i], double, m_cuTreeStats.filterSize[i] * dstdimi[i]);
         CHECKED_MALLOC(m_cuTreeStats.pos[i], int, dstdimi[i]);
 
         /* Initialize filter coefficients */
-        float inc = srcdim[i] / dstdim[i];
-        float dmul = inc > 1.f ? dstdim[i] / srcdim[i] : 1.f;
-        float dstinsrc = 0.5f * inc - 0.5f;
+        double inc = srcdim[i] / dstdim[i];
+        double dmul = inc > 1. ? dstdim[i] / srcdim[i] : 1.;
+        double dstinsrc = 0.5 * inc - 0.5;
         int filtersize = m_cuTreeStats.filterSize[i];
         for (int j = 0; j < dstdimi[i]; j++)
         {
-            int pos = dstinsrc - (filtersize - 2.f) * 0.5f;
-            float sum = 0.0;
+            int pos = dstinsrc - (filtersize - 2.) * 0.5;
+            double sum = 0.0;
             m_cuTreeStats.pos[i][j] = pos;
             for (int k = 0; k < filtersize; k++)
             {
-                float d = fabs(pos + k - dstinsrc) * dmul;
-                float coeff = X265_MAX(1.f - d, 0);
+                double d = abs(pos + k - dstinsrc) * dmul;
+                double coeff = X265_MAX(1. - d, 0);
                 m_cuTreeStats.coeffs[i][j * filtersize + k] = coeff;
                 sum += coeff;
             }
-            sum = 1.0f / sum;
+            sum = 1.0 / sum;
             for (int k = 0; k < filtersize; k++)
                 m_cuTreeStats.coeffs[i][j * filtersize + k] *= sum;
             dstinsrc += inc;
@@ -1873,9 +1873,9 @@ void RateControl::cuTreeRescaleDestroy()
     }
 }
 
-static __inline double tapfilter(double *src, int pos, int max, int stride, float *coeff, int filtersize)
+static __inline double tapfilter(double *src, int pos, int max, int stride, double *coeff, int filtersize)
 {
-    double sum = 0.f;
+    double sum = 0.;
     for (int i = 0; i < filtersize; i++, pos++)
         sum += src[x265_clip3( 0, max-1, pos)*stride] * double(coeff[i]);
     return sum;
@@ -1894,7 +1894,7 @@ void RateControl::cuTreeRescale(double *dst)
     height = m_cuTreeStats.srcDim[1];
     for (int y = 0; y < height; y++, input += stride, output += m_lowresCuWidth)
     {
-        float *coeff = m_cuTreeStats.coeffs[0];
+        double *coeff = m_cuTreeStats.coeffs[0];
         for (int x = 0; x < m_lowresCuWidth; x++, coeff+=filtersize)
             output[x] = tapfilter(input, m_cuTreeStats.pos[0][x], stride, 1, coeff, filtersize);
     }
@@ -1907,7 +1907,7 @@ void RateControl::cuTreeRescale(double *dst)
     height = m_cuTreeStats.srcDim[1];
     for (int x = 0; x < m_lowresCuWidth; x++, input++, output++)
     {
-        float *coeff = m_cuTreeStats.coeffs[1];
+        double *coeff = m_cuTreeStats.coeffs[1];
         for (int y = 0; y < m_lowresCuHeight; y++, coeff+=filtersize)
             output[y*stride] = tapfilter(input, m_cuTreeStats.pos[1][y], height, stride, coeff, filtersize);
     }
