@@ -1940,7 +1940,7 @@ bool RateControl::cuTreeReadFor2Pass(Frame* frame)
                 {
                     if (!fread(&type, 1, 1, m_cutreeStatFileIn))
                         goto fail;
-                    if (fread(m_cuTreeStats.qpBuffer[m_cuTreeStats.qpBufPos], sizeof(uint16_t), ncu, m_cutreeStatFileIn) != (size_t)ncu)
+                    if (fread(m_cuTreeStats.qpBuffer[m_cuTreeStats.qpBufPos], sizeof(uint16_t), m_cuTreeStats.srcCuCount, m_cutreeStatFileIn) != (size_t)m_cuTreeStats.srcCuCount)
                         goto fail;
                 }
                 else // X265_SHARE_MODE_SHAREDMEM == m_param->rc.dataShareMode
@@ -1965,7 +1965,7 @@ bool RateControl::cuTreeReadFor2Pass(Frame* frame)
             while(type != sliceTypeActual);
         }
         double *dst = m_cuTreeStats.bRescaleEnabled ? m_cuTreeStats.scaleBuffer[0] : frame->m_lowres.qpCuTreeOffset;
-        primitives.fix8Unpack(dst, m_cuTreeStats.qpBuffer[m_cuTreeStats.qpBufPos], ncu);
+        primitives.fix8Unpack(dst, m_cuTreeStats.qpBuffer[m_cuTreeStats.qpBufPos], m_cuTreeStats.srcCuCount);
 
         if (m_cuTreeStats.bRescaleEnabled)
             cuTreeRescale(frame->m_lowres.qpCuTreeOffset);
