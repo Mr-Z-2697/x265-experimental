@@ -509,6 +509,7 @@ bool RateControl::init(const SPS& sps)
         {
             if (X265_SHARE_MODE_FILE == m_param->rc.dataShareMode)
             {
+                double resFactor, resFactorBits;
                 m_expectedBitsSum = 0;
                 char *p, *statsIn, *statsBuf;
                 /* read 1st pass stats */
@@ -553,6 +554,15 @@ bool RateControl::init(const SPS& sps)
                         x265_log(m_param, X265_LOG_ERROR, "Resolution specified in stats file not valid\n");
                         return false;
                     }
+                    if (m_param->rc.cuTree)
+                    {
+                    m_cuTreeStats.srcDim[0] = i;
+                    m_cuTreeStats.srcDim[1] = j;
+                    }
+                    resFactor = (double)m_param->sourceWidth * m_param->sourceHeight / (i*j);
+                    /* Change in bits relative to resolution isn't quite linear on typical sources,
+                     * so we'll at least try to roughly approximate this effect. */
+                    resFactorBits = pow(resFactor, 0.7);
                     if ((p = strstr(opts, " fps=")) == 0 || sscanf(p, " fps=%u/%u", &k, &l) != 2)
                     {
                         x265_log(m_param, X265_LOG_ERROR, "fps specified in stats file not valid\n");
@@ -711,6 +721,12 @@ bool RateControl::init(const SPS& sps)
                         splitbUsed(bUsed, rce);
                         rce->rpsIdx = -1;
                     }
+                    rce->coeffBits     *= resFactorBits;
+                    rce->mvBits        *= resFactorBits;
+                    rce->miscBits      *= resFactorBits;
+                    rce->iCuCount      *= resFactor;
+                    rce->pCuCount      *= resFactor;
+                    rce->skipCuCount   *= resFactor;
                     rce->keptAsRef = true;
                     rce->isIdr = false;
                     if (picType == 'b' || picType == 'p')
