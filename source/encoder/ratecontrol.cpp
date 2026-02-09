@@ -185,9 +185,12 @@ RateControl::RateControl(x265_param& p, Encoder *top)
 {
     m_param = &p;
     m_top = top;
-    m_lowresCuWidth = ((m_param->sourceWidth / 2) + X265_LOWRES_CU_SIZE - 1) >> X265_LOWRES_CU_BITS;
-    m_lowresCuHeight = ((m_param->sourceHeight / 2) + X265_LOWRES_CU_SIZE - 1) >> X265_LOWRES_CU_BITS;
-    m_ncu = m_lowresCuWidth * m_lowresCuHeight;
+    int lowresCuWidth = ((m_param->sourceWidth / 2) + X265_LOWRES_CU_SIZE - 1) >> X265_LOWRES_CU_BITS;
+    int lowresCuHeight = ((m_param->sourceHeight / 2) + X265_LOWRES_CU_SIZE - 1) >> X265_LOWRES_CU_BITS;
+    m_ncu = lowresCuWidth * lowresCuHeight;
+
+    m_lowresCuWidth = lowresCuWidth;
+    m_lowresCuHeight = lowresCuHeight;
 
     m_qCompress = (m_param->rc.cuTree && !m_param->rc.hevcAq) ? 1 : m_param->rc.qCompress;
 
