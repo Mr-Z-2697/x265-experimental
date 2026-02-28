@@ -1442,7 +1442,8 @@ void SAO::estIterOffset(int typeIdx, int64_t lambda, int32_t count, int32_t offs
 
     // Assuming sending quantized value 0 results in zero offset and sending the value zero needs 1 bit.
     // entropy coder can be used to measure the exact rate here.
-    int64_t bestCost = calcSaoRdoCost(0, 1, lambda);
+    int64_t zerodist = estSaoDist(0, 0, offsetOrg);
+    int64_t bestCost = calcSaoRdoCost(zerodist, 1, lambda);
     while (offset != 0)
     {
         // Calculate the bits required for signalling the offset
