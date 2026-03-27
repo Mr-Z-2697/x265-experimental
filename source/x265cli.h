@@ -180,6 +180,7 @@ static const struct option long_options[] =
     { "chunk-end",      required_argument, NULL, 0 },
     { "bitrate",        required_argument, NULL, 0 },
     { "qp",             required_argument, NULL, 'q' },
+    { "vqp",            required_argument, NULL, 0 },
     { "aq-mode",        required_argument, NULL, 0 },
     { "aq-strength",    required_argument, NULL, 0 },
     { "sbrc",                 no_argument, NULL, 0 },

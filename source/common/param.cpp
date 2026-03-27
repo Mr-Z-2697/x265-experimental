@@ -307,6 +307,7 @@ void x265_param_default(x265_param* param)
     param->rc.qpStep = 4;
     param->rc.rateControlMode = X265_RC_CRF;
     param->rc.qp = 32;
+    param->rc.vqp = 0;
     param->rc.aqMode = X265_AQ_AUTO_VARIANCE;
     param->rc.hevcAq = 0;
     param->rc.qgSize = 32;
@@ -864,6 +865,7 @@ int x265_zone_param_parse(x265_param* p, const char* name, const char* value)
         p->rc.qp = atoi(value);
         p->rc.rateControlMode = X265_RC_CQP;
     }
+    OPT("vqp") p->rc.vqp = atobool(value);
     OPT("bitrate")
     {
         p->rc.bitrate = atoi(value);
@@ -1197,6 +1199,7 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
         p->rc.qp = atoi(value);
         p->rc.rateControlMode = X265_RC_CQP;
     }
+    OPT("vqp") p->rc.vqp = atobool(value);
     OPT("rc-grain") p->rc.bEnableGrain = atobool(value);
     OPT("zones")
     {
@@ -2390,7 +2393,10 @@ char *x265_param2string(x265_param* p, int padx, int pady)
         }
     }
     else if (p->rc.rateControlMode == X265_RC_CQP)
+    {
         s += snprintf(s, bufSize - (s - buf), " qp=%d", p->rc.qp);
+        s += snprintf(s, bufSize - (s - buf), " vqp=%d", p->rc.vqp);
+    }
     if (!(p->rc.rateControlMode == X265_RC_CQP && p->rc.qp == 0))
     {
         s += snprintf(s, bufSize - (s - buf), " ipratio=%.2f", p->rc.ipFactor);
@@ -2845,6 +2851,7 @@ void x265_copy_params(x265_param* dst, x265_param* src)
 
     dst->rc.rateControlMode = src->rc.rateControlMode;
     dst->rc.qp = src->rc.qp;
+    dst->rc.vqp = src->rc.vqp;
     dst->rc.bitrate = src->rc.bitrate;
     dst->rc.qCompress = src->rc.qCompress;
     dst->rc.ipFactor = src->rc.ipFactor;
