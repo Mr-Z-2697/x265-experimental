@@ -2395,7 +2395,8 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     else if (p->rc.rateControlMode == X265_RC_CQP)
     {
         s += snprintf(s, bufSize - (s - buf), " qp=%d", p->rc.qp);
-        s += snprintf(s, bufSize - (s - buf), " vqp=%d", p->rc.vqp);
+        if (p->rc.vqp)
+            s += snprintf(s, bufSize - (s - buf), " vqp");
     }
     if (!(p->rc.rateControlMode == X265_RC_CQP && p->rc.qp == 0))
     {
