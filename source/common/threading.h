@@ -56,15 +56,20 @@ int no_atomic_and(int* ptr, int mask);
 int no_atomic_inc(int* ptr);
 int no_atomic_dec(int* ptr);
 int no_atomic_add(int* ptr, int val);
+int64_t no_atomic_add64(int64_t* ptr, int64_t val);
 }
 
-#define CLZ(id, x)            id = (unsigned long)__builtin_clz(x) ^ 31
-#define CTZ(id, x)            id = (unsigned long)__builtin_ctz(x)
+#define BSR(id, x)            (id) = ((unsigned long)__builtin_clz(x) ^ 31)
+#define BSF(id, x)            (id) = ((unsigned long)__builtin_ctz(x))
+#define BSR64(id, x)          (id) = ((unsigned long)__builtin_clzll(x) ^ 63)
+#define BSF64(id, x)          (id) = ((unsigned long)__builtin_ctzll(x))
 #define ATOMIC_OR(ptr, mask)  no_atomic_or((int*)ptr, mask)
 #define ATOMIC_AND(ptr, mask) no_atomic_and((int*)ptr, mask)
 #define ATOMIC_INC(ptr)       no_atomic_inc((int*)ptr)
 #define ATOMIC_DEC(ptr)       no_atomic_dec((int*)ptr)
-#define ATOMIC_ADD(ptr, val)  no_atomic_add((int*)ptr, val)
+#define ATOMIC_ADD(ptr, val)  (sizeof(*(ptr)) == 8 ? \
+                               no_atomic_add64((int64_t*)ptr, (int64_t)(val)) : \
+                               no_atomic_add((int*)ptr, (int)(val)))
 #define GIVE_UP_TIME()        usleep(0)
 
 #elif __GNUC__               /* GCCs builtin atomics */
@@ -72,24 +77,30 @@ int no_atomic_add(int* ptr, int val);
 #include <sys/time.h>
 #include <unistd.h>
 
-#define CLZ(id, x)            id = (unsigned long)__builtin_clz(x) ^ 31
-#define CTZ(id, x)            id = (unsigned long)__builtin_ctz(x)
+#define BSR(id, x)            (id) = ((unsigned long)__builtin_clz(x) ^ 31)
+#define BSF(id, x)            (id) = ((unsigned long)__builtin_ctz(x))
+#define BSR64(id, x)          (id) = ((unsigned long)__builtin_clzll(x) ^ 63)
+#define BSF64(id, x)          (id) = ((unsigned long)__builtin_ctzll(x))
 #define ATOMIC_OR(ptr, mask)  __sync_fetch_and_or(ptr, mask)
 #define ATOMIC_AND(ptr, mask) __sync_fetch_and_and(ptr, mask)
 #define ATOMIC_INC(ptr)       __sync_add_and_fetch((volatile int32_t*)ptr, 1)
 #define ATOMIC_DEC(ptr)       __sync_add_and_fetch((volatile int32_t*)ptr, -1)
-#define ATOMIC_ADD(ptr, val)  __sync_fetch_and_add((volatile int32_t*)ptr, val)
+#define ATOMIC_ADD(ptr, val)  __sync_fetch_and_add((volatile __typeof__(*(ptr))*)ptr, (__typeof__(*(ptr) + 0))(val))
 #define GIVE_UP_TIME()        usleep(0)
 
 #elif defined(_MSC_VER)       /* Windows atomic intrinsics */
 
 #include <intrin.h>
 
-#define CLZ(id, x)            _BitScanReverse(&id, x)
-#define CTZ(id, x)            _BitScanForward(&id, x)
+#define BSR(id, x)            _BitScanReverse(&id, x)
+#define BSF(id, x)            _BitScanForward(&id, x)
+#define BSR64(id, x)          _BitScanReverse64(&id, x)
+#define BSF64(id, x)          _BitScanForward64(&id, x)
 #define ATOMIC_INC(ptr)       InterlockedIncrement((volatile LONG*)ptr)
 #define ATOMIC_DEC(ptr)       InterlockedDecrement((volatile LONG*)ptr)
-#define ATOMIC_ADD(ptr, val)  InterlockedExchangeAdd((volatile LONG*)ptr, val)
+#define ATOMIC_ADD(ptr, val)  (sizeof(*(ptr)) == 8 ? \
+                               InterlockedExchangeAdd64((volatile LONGLONG*)ptr, (LONGLONG)(val)) : \
+                               InterlockedExchangeAdd((volatile LONG*)ptr, (LONG)(val)))
 #define ATOMIC_OR(ptr, mask)  _InterlockedOr((volatile LONG*)ptr, (LONG)mask)
 #define ATOMIC_AND(ptr, mask) _InterlockedAnd((volatile LONG*)ptr, (LONG)mask)
 #define GIVE_UP_TIME()        Sleep(0)

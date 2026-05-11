@@ -62,7 +62,9 @@ static void sigill_handler(int sig)
 #endif // if X265_ARCH_ARM
 
 namespace X265_NS {
+#if X265_ARCH_X86
 static bool enable512 = false;
+#endif
 const cpu_name_t cpu_names[] =
 {
 #if X265_ARCH_X86
@@ -121,8 +123,15 @@ const cpu_name_t cpu_names[] =
 #if defined(HAVE_NEON_I8MM)
     { "Neon_I8MM",       X265_CPU_NEON_I8MM },
 #endif
+#if defined(HAVE_SVE2_BITPERM)
+    { "SVE2_BitPerm",    X265_CPU_SVE2_BITPERM },
+#endif
 #elif X265_ARCH_POWER8
     { "Altivec",         X265_CPU_ALTIVEC },
+
+#elif X265_ARCH_RISCV64
+    { "RVV",           X265_CPU_RVV },
+    { "Zbb",           X265_CPU_ZBB },
 
 #endif // if X265_ARCH_X86
     { "", 0 },
@@ -352,7 +361,7 @@ uint32_t cpu_detect(bool benableavx512)
 {
     int flags = 0;
 
-#if HAVE_ARMV6
+#if HAVE_ARMV6 && ENABLE_ASSEMBLY
     flags |= X265_CPU_ARMV6;
 
     // don't do this hack if compiled with -mfpu=neon
@@ -399,6 +408,21 @@ uint32_t cpu_detect(bool benableavx512)
 
 #ifdef ENABLE_ASSEMBLY
     flags = aarch64_cpu_detect();
+#endif
+
+    return flags;
+}
+
+#elif X265_ARCH_RISCV64
+#include "riscv64/cpu.h"
+
+uint32_t cpu_detect(bool benableavx512)
+{
+    (void)benableavx512;
+    uint32_t flags = 0;
+
+#ifdef ENABLE_ASSEMBLY
+    flags = riscv64_cpu_detect();
 #endif
 
     return flags;

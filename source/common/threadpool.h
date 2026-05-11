@@ -102,10 +102,12 @@ public:
     void setThreadNodeAffinity(void *numaMask);
     int  tryAcquireSleepingThread(sleepbitmap_t firstTryBitmap, sleepbitmap_t secondTryBitmap);
     int  tryBondPeers(int maxPeers, sleepbitmap_t peerBitmap, BondedTaskGroup& master);
+
     static ThreadPool* allocThreadPools(x265_param* p, int& numPools, bool isThreadsReserved);
     static int  getCpuCount();
     static int  getNumaNodeCount();
-    static void getFrameThreadsCount(x265_param* p,int cpuCount);
+    static int  getFrameThreadsCount(x265_param* p, int cpuCount);
+    static int  configureTmeThreadCount(x265_param* p, int cpuCount);
 };
 
 /* Any worker thread may enlist the help of idle worker threads from the same
@@ -168,6 +170,20 @@ public:
      * 0 and jp.m_numWorkers - 1 */
     virtual void processTasks(int workerThreadId) = 0;
 };
+
+/**
+ * @brief Return the highest current CPU frequency in MHz across all cores, or 0.0 if unavailable.
+ *
+ * The value reflects the live frequency as reported by the cpufreq subsystem,
+ * which accounts for the active scaling governor and EPP hint.
+ *
+ * Platform support:
+ *   Linux   – iterates /sys/devices/system/cpu/cpuN/cpufreq/scaling_cur_freq (kHz)
+ *              for all cores and returns the maximum; falls back to /proc/cpuinfo
+ *   macOS   – sysctl hw.cpufrequency (Hz)
+ *   Windows – registry ~MHz under CentralProcessor\0
+ */
+double getCPUFrequencyMHz();
 
 } // end namespace X265_NS
 
