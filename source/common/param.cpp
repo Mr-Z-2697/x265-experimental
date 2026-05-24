@@ -284,6 +284,7 @@ void x265_param_default(x265_param* param)
     param->analysisSave[0] = 0;
     param->analysisLoad[0] = 0;
     param->bIntraInBFrames = 1;
+    param->bIntraInPFrames = 1;
     param->bLossless = 0;
     param->bCULossless = 0;
     param->bEnableTemporalSubLayers = 0;
@@ -853,6 +854,7 @@ int x265_zone_param_parse(x265_param* p, const char* name, const char* value)
             p->rdoqLevel = 0;
     }
     OPT("b-intra") p->bIntraInBFrames = atobool(value);
+    OPT("p-intra") p->bIntraInPFrames = atobool(value);
     OPT("scaling-list") snprintf(p->scalingLists, X265_MAX_STRING_SIZE, "%s", value);
     OPT("crf")
     {
@@ -1143,6 +1145,7 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
     OPT("rd-refine") p->bEnableRdRefine = atobool(value);
     OPT("signhide") p->bEnableSignHiding = atobool(value);
     OPT("b-intra") p->bIntraInBFrames = atobool(value);
+    OPT("p-intra") p->bIntraInPFrames = atobool(value);
     OPT("lft") p->bEnableLoopFilter = atobool(value); /* DEPRECATED */
     OPT("deblock")
     {
@@ -2188,6 +2191,7 @@ void x265_print_params(x265_param* param)
     TOOLOPT(param->bEnableTemporalMvp, "tmvp");
     TOOLOPT(param->bEnableConstrainedIntra, "cip");
     TOOLOPT(param->bIntraInBFrames, "b-intra");
+    TOOLOPT(param->bIntraInPFrames, "p-intra");
     TOOLOPT(param->bEnableFastIntra, "fast-intra");
     TOOLOPT(param->bEnableStrongIntraSmoothing, "strong-intra-smoothing");
     TOOLVAL(param->lookaheadSlices, "lslices=%d");
@@ -2354,6 +2358,7 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     BOOL(p->bEnableTSkipFast, "tskip-fast");
     BOOL(p->bCULossless, "cu-lossless");
     BOOL(p->bIntraInBFrames, "b-intra");
+    BOOL(p->bIntraInPFrames, "p-intra");
     BOOL(p->bEnableSplitRdSkip, "splitrd-skip");
     s += snprintf(s, bufSize - (s - buf), " rdpenalty=%d", p->rdPenalty);
     s += snprintf(s, bufSize - (s - buf), " psy-rd=%.2f", p->psyRd);
@@ -2830,6 +2835,7 @@ void x265_copy_params(x265_param* dst, x265_param* src)
     dst->bEnableTSkipFast = src->bEnableTSkipFast;
     dst->bCULossless = src->bCULossless;
     dst->bIntraInBFrames = src->bIntraInBFrames;
+    dst->bIntraInPFrames = src->bIntraInPFrames;
     dst->rdPenalty = src->rdPenalty;
     dst->psyRd = src->psyRd;
     dst->psyRdoq = src->psyRdoq;

@@ -1639,6 +1639,7 @@ typedef struct x265_param
      * (veryslow and placebo). All other presets will not try intra in B frames
      * regardless of this setting */
     int       bIntraInBFrames;
+    int       bIntraInPFrames;
 
     /* Apply an optional penalty to the estimated cost of 32x32 intra blocks in
      * non-intra slices. 0 is disabled, 1 enables a small penalty, and 2 enables
