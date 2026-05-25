@@ -1750,7 +1750,7 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
         uint32_t lowmode, highmode, amode = 5, abits = 0;
         uint64_t acost = MAX_INT64;
 
-        if (!(m_param->limitIntraAngle && tuSize > 8))
+        if (!(m_param->limitIntraAngle > 1 && tuSize > 8))
         {
             int modeInit, modeStep;
             if (m_param->limitIntraAngle)
@@ -1902,10 +1902,10 @@ sse_t Search::estIntraPredQT(Mode &intraMode, const CUGeom& cuGeom, const uint32
         if (m_param->limitIntraAngle)
         {
             int intraAngleList_tmp[8] = {26, 10, 34, 18, 22, 14, 30, 6};
-            if (tuSize <= 8)
-                numIntraAngle = 8;
-            else
+            if (tuSize > 8 && m_param->limitIntraAngle > 1)
                 numIntraAngle = 2;
+            else
+                numIntraAngle = 8;
             for (int i = 0; i < numIntraAngle; i++)
             {
                 intraAngleList[i] = intraAngleList_tmp[i];

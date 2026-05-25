@@ -228,7 +228,7 @@ void x265_param_default(x265_param* param)
     /* Intra Coding Tools */
     param->bEnableConstrainedIntra = 0;
     param->bEnableStrongIntraSmoothing = 1;
-    param->limitIntraAngle = 1;
+    param->limitIntraAngle = 0;
     param->bEnableFastIntra = 0;
     param->bEnableSplitRdSkip = 0;
 
@@ -1060,6 +1060,7 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
     OPT("no-tskip-fast") p->bEnableTSkipFast = atobool(value);
     OPT("tskip-fast") p->bEnableTSkipFast = atobool(value);
     OPT("strong-intra-smoothing") p->bEnableStrongIntraSmoothing = atobool(value);
+    OPT("limit-intra-angle") p->limitIntraAngle = atoi(value);
     OPT("lossless") p->bLossless = atobool(value);
     OPT("cu-lossless") p->bCULossless = atobool(value);
     OPT2("constrained-intra", "cip") p->bEnableConstrainedIntra = atobool(value);
@@ -2191,6 +2192,7 @@ void x265_print_params(x265_param* param)
     TOOLOPT(param->bIntraInBFrames, "b-intra");
     TOOLOPT(param->bEnableFastIntra, "fast-intra");
     TOOLOPT(param->bEnableStrongIntraSmoothing, "strong-intra-smoothing");
+    TOOLOPT(param->limitIntraAngle, "limit-intra-angle");
     TOOLVAL(param->lookaheadSlices, "lslices=%d");
     TOOLVAL(param->lookaheadThreads, "lthreads=%d")
     TOOLVAL(param->bCTUInfo, "ctu-info=%d");
@@ -2320,6 +2322,7 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     s += snprintf(s, bufSize - (s - buf), " nr-inter=%d", p->noiseReductionInter);
     BOOL(p->bEnableConstrainedIntra, "constrained-intra");
     BOOL(p->bEnableStrongIntraSmoothing, "strong-intra-smoothing");
+    s += snprintf(s, bufSize - (s - buf), " limit-intra-angle=%d", p->limitIntraAngle);
     s += snprintf(s, bufSize - (s - buf), " max-merge=%d", p->maxNumMergeCand);
     s += snprintf(s, bufSize - (s - buf), " limit-refs=%d", p->limitReferences);
     BOOL(p->limitModes, "limit-modes");
@@ -2796,6 +2799,7 @@ void x265_copy_params(x265_param* dst, x265_param* src)
     if (strlen(src->scalingLists)) snprintf(dst->scalingLists, X265_MAX_STRING_SIZE, "%s", src->scalingLists);
     else dst->scalingLists[0] = 0;
     dst->bEnableStrongIntraSmoothing = src->bEnableStrongIntraSmoothing;
+    dst->limitIntraAngle = src->limitIntraAngle;
     dst->bEnableConstrainedIntra = src->bEnableConstrainedIntra;
     dst->maxNumMergeCand = src->maxNumMergeCand;
     dst->limitReferences = src->limitReferences;
