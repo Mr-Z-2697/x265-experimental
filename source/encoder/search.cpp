@@ -1876,6 +1876,9 @@ sse_t Search::estIntraPredQT(Mode &intraMode, const CUGeom& cuGeom, const uint32
     {
         uint32_t bmode = 0;
 
+        int limitIntraAngle = 1;
+        int numLimitedIntraAngle = 8;
+        int limitIntraAngleList[8] = {26, 10, 34, 18, 22, 14, 30, 6};
         if (intraMode.cu.m_lumaIntraDir[puIdx] != (uint8_t)ALL_IDX)
             bmode = intraMode.cu.m_lumaIntraDir[puIdx];
         else
@@ -1936,8 +1939,9 @@ sse_t Search::estIntraPredQT(Mode &intraMode, const CUGeom& cuGeom, const uint32
                 {
                     primitives.cu[sizeIdx].transpose(m_fencTransposed, fenc, scaleStride);
                     primitives.cu[sizeIdx].intra_pred_allangs(m_intraPredAngs, intraNeighbourBuf[0], intraNeighbourBuf[1], (scaleTuSize <= 16));
-                    for (int mode = 2; mode < 35; mode++)
+                    for (int modeIdx = 0; modeIdx < numLimitedIntraAngle; modeIdx++)
                     {
+                        int mode = limitIntraAngleList[modeIdx];
                         bits = (mpms & ((uint64_t)1 << mode)) ? m_entropyCoder.bitsIntraModeMPM(mpmModes, mode) : rbits;
                         if (mode < 18)
                             sad = sa8d(m_fencTransposed, scaleTuSize, &m_intraPredAngs[(mode - 2) * (scaleTuSize * scaleTuSize)], scaleTuSize) << costShift;
@@ -1949,8 +1953,9 @@ sse_t Search::estIntraPredQT(Mode &intraMode, const CUGeom& cuGeom, const uint32
                 }
                 else
                 {
-                    for (int mode = 2; mode < 35; mode++)
+                    for (int modeIdx = 0; modeIdx < numLimitedIntraAngle; modeIdx++)
                     {
+                        int mode = limitIntraAngleList[modeIdx];
                         bits = (mpms & ((uint64_t)1 << mode)) ? m_entropyCoder.bitsIntraModeMPM(mpmModes, mode) : rbits;
                         int filter = !!(g_intraFilterFlags[mode] & scaleTuSize);
                         primitives.cu[sizeIdx].intra_pred[mode](m_intraPred, scaleTuSize, intraNeighbourBuf[filter], mode, scaleTuSize <= 16);
@@ -1968,10 +1973,17 @@ sse_t Search::estIntraPredQT(Mode &intraMode, const CUGeom& cuGeom, const uint32
                     candCostList[i] = MAX_INT64;
 
                 uint64_t paddedBcost = bcost + (bcost >> 2); // 1.25%
-                for (int mode = 0; mode < 35; mode++)
+                for (int mode = 0; mode < 2; mode++)
                     if ((modeCosts[mode] < paddedBcost) || ((uint32_t)mode == mpmModes[0])) 
                         /* choose for R-D analysis only if this mode passes cost threshold or matches MPM[0] */
                         updateCandList(mode, modeCosts[mode], maxCandCount, rdModeList, candCostList);
+                for (int modeIdx = 0; modeIdx < numLimitedIntraAngle; modeIdx++)
+                {
+                    int mode = limitIntraAngleList[modeIdx];
+                    if ((modeCosts[mode] < paddedBcost) || ((uint32_t)mode == mpmModes[0])) 
+                        /* choose for R-D analysis only if this mode passes cost threshold or matches MPM[0] */
+                        updateCandList(mode, modeCosts[mode], maxCandCount, rdModeList, candCostList);
+                }
             }
 
             /* measure best candidates using simple RDO (no TU splits) */
