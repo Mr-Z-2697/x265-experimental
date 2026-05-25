@@ -1752,8 +1752,16 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
 
         if (!(m_param->bEnableLimitIntraAngle && tuSize > 8))
         {
+            int modeInit, modeStep;
+            if (m_param->bEnableLimitIntraAngle)
+            {
+                modeInit = 6;
+                modeStep = 4;
+            }
+            else
+                modeInit = modeStep = 5;
             /* pick the best angle, sampling at distance of 5 */
-            for (mode = 5; mode < 35; mode += 5)
+            for (mode = modeInit; mode < 35; mode += modeStep)
             {
                 TRY_ANGLE(mode);
                 COPY4_IF_LT(acost, cost, amode, mode, asad, sad, abits, bits);
