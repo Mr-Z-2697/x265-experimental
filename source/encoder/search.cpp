@@ -1789,9 +1789,9 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
                 TRY_ANGLE(34);
                 COPY4_IF_LT(acost, cost, amode, 34, asad, sad, abits, bits);
             }
-
-            COPY4_IF_LT(bcost, acost, bmode, amode, bsad, asad, bbits, abits);
         }
+
+        COPY4_IF_LT(bcost, acost, bmode, amode, bsad, asad, bbits, abits);
     }
     else // calculate and search all intra prediction angles for lowest cost
     {
