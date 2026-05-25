@@ -1502,7 +1502,7 @@ typedef struct x265_param
     int       bEnableStrongIntraSmoothing;
 
     /* not exposed (yet?) */
-    int bEnableLimitIntraAngle;
+    int       limitIntraAngle;
 
     /*== Inter Coding Tools ==*/
 

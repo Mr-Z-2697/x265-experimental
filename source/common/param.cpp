@@ -228,7 +228,7 @@ void x265_param_default(x265_param* param)
     /* Intra Coding Tools */
     param->bEnableConstrainedIntra = 0;
     param->bEnableStrongIntraSmoothing = 1;
-    param->bEnableLimitIntraAngle = 1;
+    param->limitIntraAngle = 1;
     param->bEnableFastIntra = 0;
     param->bEnableSplitRdSkip = 0;
 
