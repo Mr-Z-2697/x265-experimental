@@ -1720,7 +1720,7 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
     COPY4_IF_LT(bcost, cost, bmode, mode, bsad, sad, bbits, bits);
 
     bool allangs = true;
-    if (primitives.cu[sizeIdx].intra_pred_allangs)
+    if (primitives.cu[sizeIdx].intra_pred_allangs && !m_param->bEnableLimitIntraAngle)
     {
         primitives.cu[sizeIdx].transpose(m_fencTransposed, fenc, scaleStride);
         primitives.cu[sizeIdx].intra_pred_allangs(m_intraPredAngs, intraNeighbourBuf[0], intraNeighbourBuf[1], (scaleTuSize <= 16)); 
@@ -1750,7 +1750,7 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
         uint32_t lowmode, highmode, amode = 5, abits = 0;
         uint64_t acost = MAX_INT64;
 
-        if (!(m_param->bEnableLimitIntraAngle && scaleTuSize > 8))
+        if (!(m_param->bEnableLimitIntraAngle && tuSize > 8))
         {
             /* pick the best angle, sampling at distance of 5 */
             for (mode = 5; mode < 35; mode += 5)
@@ -1965,7 +1965,7 @@ sse_t Search::estIntraPredQT(Mode &intraMode, const CUGeom& cuGeom, const uint32
                 COPY1_IF_LT(bcost, modeCosts[PLANAR_IDX]);
 
                 // angular predictions
-                if (primitives.cu[sizeIdx].intra_pred_allangs)
+                if (primitives.cu[sizeIdx].intra_pred_allangs && !m_param->bEnableLimitIntraAngle)
                 {
                     primitives.cu[sizeIdx].transpose(m_fencTransposed, fenc, scaleStride);
                     primitives.cu[sizeIdx].intra_pred_allangs(m_intraPredAngs, intraNeighbourBuf[0], intraNeighbourBuf[1], (scaleTuSize <= 16));
