@@ -1720,7 +1720,7 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
     COPY4_IF_LT(bcost, cost, bmode, mode, bsad, sad, bbits, bits);
 
     bool allangs = true;
-    if (primitives.cu[sizeIdx].intra_pred_allangs && !m_param->limitIntraAngle)
+    if (primitives.cu[sizeIdx].intra_pred_allangs && !(m_param->limitIntraAngle & 0b10) && !((m_param->limitIntraAngle & 0b01) && tuSize > 8))
     {
         primitives.cu[sizeIdx].transpose(m_fencTransposed, fenc, scaleStride);
         primitives.cu[sizeIdx].intra_pred_allangs(m_intraPredAngs, intraNeighbourBuf[0], intraNeighbourBuf[1], (scaleTuSize <= 16)); 
@@ -1750,10 +1750,17 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
         uint32_t lowmode, highmode, amode = 5, abits = 0;
         uint64_t acost = MAX_INT64;
 
-        if (!(m_param->limitIntraAngle > 1 && tuSize > 8))
+        if ((m_param->limitIntraAngle & 0b01) && tuSize > 8)
+        {
+            TRY_ANGLE(26);
+            COPY4_IF_LT(acost, cost, amode, 26, asad, sad, abits, bits);
+            TRY_ANGLE(10);
+            COPY4_IF_LT(acost, cost, amode, 10, asad, sad, abits, bits);
+        }
+        else
         {
             int modeInit, modeStep;
-            if (m_param->limitIntraAngle)
+            if (m_param->limitIntraAngle & 0b10)
             {
                 modeInit = 6;
                 modeStep = 4;
@@ -1767,15 +1774,8 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
                 COPY4_IF_LT(acost, cost, amode, mode, asad, sad, abits, bits);
             }
         }
-        else
-        {
-            TRY_ANGLE(26);
-            COPY4_IF_LT(acost, cost, amode, 26, asad, sad, abits, bits);
-            TRY_ANGLE(10);
-            COPY4_IF_LT(acost, cost, amode, 10, asad, sad, abits, bits);
-        }
 
-        if (!m_param->limitIntraAngle)
+        if (!(m_param->limitIntraAngle & 0b10))
         {
             /* refine best angle at distance 2, then distance 1 */
             for (uint32_t dist = 2; dist >= 1; dist--)
@@ -1899,14 +1899,16 @@ sse_t Search::estIntraPredQT(Mode &intraMode, const CUGeom& cuGeom, const uint32
 
         int numIntraAngle = 0;
         int intraAngleList[33] = {26};
-        if (m_param->limitIntraAngle)
+        if (tuSize > 8 && (m_param->limitIntraAngle & 0b01))
+        {
+            numIntraAngle = 2;
+            intraAngleList[1] = 10;
+        }
+        else if (m_param->limitIntraAngle & 0b10)
         {
             int intraAngleList_tmp[8] = {26, 10, 34, 18, 22, 14, 30, 6};
-            if (tuSize > 8 && m_param->limitIntraAngle > 1)
-                numIntraAngle = 2;
-            else
-                numIntraAngle = 8;
-            for (int i = 0; i < numIntraAngle; i++)
+            numIntraAngle = 8;
+            for (int i = 1; i < numIntraAngle; i++) // the entire array is initialized as 26 so skip first
             {
                 intraAngleList[i] = intraAngleList_tmp[i];
             }
@@ -1973,7 +1975,7 @@ sse_t Search::estIntraPredQT(Mode &intraMode, const CUGeom& cuGeom, const uint32
                 COPY1_IF_LT(bcost, modeCosts[PLANAR_IDX]);
 
                 // angular predictions
-                if (primitives.cu[sizeIdx].intra_pred_allangs && !m_param->limitIntraAngle)
+                if (primitives.cu[sizeIdx].intra_pred_allangs && !(m_param->limitIntraAngle & 0b10) && !((m_param->limitIntraAngle & 0b01) && tuSize > 8))
                 {
                     primitives.cu[sizeIdx].transpose(m_fencTransposed, fenc, scaleStride);
                     primitives.cu[sizeIdx].intra_pred_allangs(m_intraPredAngs, intraNeighbourBuf[0], intraNeighbourBuf[1], (scaleTuSize <= 16));
