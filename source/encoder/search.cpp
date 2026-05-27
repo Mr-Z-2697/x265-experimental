@@ -1775,7 +1775,7 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
             }
         }
 
-        if (!(m_param->limitIntraAngle & 0b10))
+        if (!m_param->limitIntraAngle)
         {
             /* refine best angle at distance 2, then distance 1 */
             for (uint32_t dist = 2; dist >= 1; dist--)
