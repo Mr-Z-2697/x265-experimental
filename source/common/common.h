@@ -233,7 +233,7 @@ typedef int16_t  coeff_t;      // transform coefficient
         var = (type*)x265_malloc(sizeof(type) * (count)); \
         if (!var) \
         { \
-            x265_log(NULL, X265_LOG_ERROR, "malloc of size %d failed\n", sizeof(type) * (count)); \
+            x265_log(NULL, X265_LOG_ERROR, "malloc of size %llu failed\n", sizeof(type) * (count)); \
             goto fail; \
         } \
     }
@@ -244,7 +244,7 @@ typedef int16_t  coeff_t;      // transform coefficient
             memset((void*)var, 0, sizeof(type) * (count)); \
         else \
         { \
-            x265_log(NULL, X265_LOG_ERROR, "malloc of size %d failed\n", sizeof(type) * (count)); \
+            x265_log(NULL, X265_LOG_ERROR, "malloc of size %llu failed\n", sizeof(type) * (count)); \
             goto fail; \
         } \
     }
@@ -351,6 +351,10 @@ typedef int16_t  coeff_t;      // transform coefficient
 #define X265_BYTE 8
 
 #define MAX_MCSTF_TEMPORAL_WINDOW_LENGTH 8
+
+#define MAX_NUM_PUS_PER_CTU      593   // Maximum number of PUs in a 64x64 CTU
+#define MAX_NUM_PU_SIZES         24    // Number of distinct PU sizes in a 64x64 CTU
+#define MIN_TME_THREADS          32    // Recommended number of threads for ThreadedME
 
 namespace X265_NS {
 

@@ -108,7 +108,7 @@ if(ENABLE_ASSEMBLY AND (ARM64 OR CROSS_COMPILE_ARM64))
     set(C_SRCS_NEON_DOTPROD filter-neon-dotprod.cpp pixel-prim-neon-dotprod.cpp)
     set(C_SRCS_NEON_I8MM filter-neon-i8mm.cpp)
     set(C_SRCS_SVE sao-prim-sve.cpp dct-prim-sve.cpp filter-prim-sve.h filter-prim-sve.cpp pixel-prim-sve.cpp)
-    set(C_SRCS_SVE2 sao-prim-sve2.cpp)
+    set(C_SRCS_SVE2 sao-prim-sve2.cpp pixel-prim-sve2.cpp)
     enable_language(ASM)
 
     # Add Arm assembly files here.
@@ -163,6 +163,39 @@ if(ENABLE_ASSEMBLY AND (ARM64 OR CROSS_COMPILE_ARM64))
         set_source_files_properties(${ASM_PRIMITIVES} PROPERTIES COMPILE_FLAGS -Werror)
     endif()
 endif(ENABLE_ASSEMBLY AND (ARM64 OR CROSS_COMPILE_ARM64))
+
+if(ENABLE_ASSEMBLY AND (RISCV64 OR CROSS_COMPILE_RISCV64))
+    if(GCC AND (CMAKE_CXX_FLAGS_RELEASE MATCHES "-O3"))
+        message(STATUS "Detected CXX compiler using -O3 optimization level")
+        add_definitions(-DAUTO_VECTORIZE=1)
+    endif()
+
+    set(ASM_PRIMITIVES ${ASM_PRIMITIVES} riscv64/asm-primitives.cpp)
+
+    # Add riscv64 intrinsics files here.
+    set(INTRINSIC_SRCS_RVV pixel-prim.cpp sao-prim.cpp filter-prim.cpp intrapred-prim.cpp riscv64_utils.cpp)
+    if(CPU_HAS_RVV_INTRINSIC)
+        foreach(SRC ${INTRINSIC_SRCS_RVV})
+            set(ASM_PRIMITIVES ${ASM_PRIMITIVES} riscv64/${SRC})
+            set_source_files_properties(riscv64/${SRC} PROPERTIES COMPILE_FLAGS ${RISCV64_INTRINSIC_FLAG})
+        endforeach()
+    endif()
+
+    enable_language(ASM)
+    source_group(Assembly FILES ${ASM_PRIMITIVES})
+
+    # Add riscv64 assembly files here.
+    set(A_SRCS asm.S blockcopy8.S dct.S sad-a.S ssd-a.S pixel-util.S mc-a.S p2s.S sao.S loopfilter.S intrapred.S riscv64_utils.S)
+    set(VEC_PRIMITIVES)
+
+    if(CPU_HAS_RVV)
+        set(RISCV64_ASMS "${A_SRCS}" CACHE INTERNAL "RISCV64 Assembly Sources")
+    endif()
+
+    if(RISCV64_WARNINGS_AS_ERRORS)
+        set_source_files_properties(${ASM_PRIMITIVES} PROPERTIES COMPILE_FLAGS -Werror)
+    endif()
+endif(ENABLE_ASSEMBLY AND (RISCV64 OR CROSS_COMPILE_RISCV64))
 
 if(POWER)
     set_source_files_properties(version.cpp PROPERTIES COMPILE_FLAGS -DX265_VERSION=${X265_VERSION})

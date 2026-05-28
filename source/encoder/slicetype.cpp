@@ -1284,7 +1284,10 @@ void Lookahead::findJob(int /*workerThreadID*/)
     slicetypeDecide();
 
     m_inputLock.acquire();
-    if (m_outputSignalRequired)
+    m_sliceTypeBusy = false;
+    m_helpWanted = true;
+
+    if (m_outputSignalRequired && m_outputQueue.size())
     {
         m_outputSignal.trigger();
         m_outputSignalRequired = false;
@@ -1569,7 +1572,9 @@ void LookaheadTLD::calculateHistogram(
         for (uint32_t horizontalIdx = 0; horizontalIdx < inputWidth; horizontalIdx += dsFactor)
         {
             pixel val = inputSrc[horizontalIdx] >> shift;
+#if HIGH_BIT_DEPTH
             X265_CHECK(val < HISTOGRAM_NUMBER_OF_BINS, "Pixel value out of allocated histogram range. This will lead to memory corruption.\n");
+#endif
             ++(histogram[val]);
             *sum += val;
         }

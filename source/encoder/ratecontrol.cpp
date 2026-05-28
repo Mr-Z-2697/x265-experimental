@@ -71,7 +71,7 @@ namespace {
     }\
 }
 
-inline int calcScale(uint32_t x)
+inline int calcScale(uint64_t x)
 {
     static uint8_t lut[16] = {4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0};
     int y, z = (((x & 0xffff) - 1) >> 27) & 16;
@@ -263,6 +263,7 @@ RateControl::RateControl(x265_param& p, Encoder *top)
     m_rateTolerance = 1.0;
     m_encodedSegmentBits = 0;
     m_segDur = 0;
+    m_totalframesInSegment = 0;
 
     if (m_param->rc.vbvBufferSize)
     {
@@ -321,6 +322,7 @@ RateControl::RateControl(x265_param& p, Encoder *top)
     m_leadingNoBSatd = 0;
     m_ipOffset = 6.0 * X265_LOG2(m_param->rc.ipFactor);
     m_pbOffset = 6.0 * X265_LOG2(m_param->rc.pbFactor);
+    m_iBits = 0;
 
     for (int i = 0; i < QP_MAX_MAX; i++)
         m_qpToEncodedBits[i] = 0;
@@ -336,6 +338,8 @@ RateControl::RateControl(x265_param& p, Encoder *top)
         m_lastQScaleFor[i] = x265_qp2qScale(m_param->rc.rateControlMode == X265_RC_CRF ? CRF_INIT_QP : ABR_INIT_QP_MIN);
         m_lmin[i] = x265_qp2qScale(m_param->rc.qpMin);
         m_lmax[i] = x265_qp2qScale(m_param->rc.qpMax);
+        m_frameCountSeg[i] = 0;
+        m_movingSumComplexitySeg[i] = 0;
     }
 
     if (m_param->rc.rateControlMode == X265_RC_CQP)
@@ -407,8 +411,8 @@ void RateControl::initVBV(const SPS& sps)
         x265_log(m_param, X265_LOG_WARNING, "VBV buffer size cannot be smaller than one frame, using %d kbit\n",
             m_param->rc.vbvBufferSize);
     }
-    int vbvBufferSize = m_param->rc.vbvBufferSize * 1000;
-    int vbvMaxBitrate = m_param->rc.vbvMaxBitrate * 1000;
+    uint64_t vbvBufferSize = m_param->rc.vbvBufferSize * 1000ULL;
+    uint64_t vbvMaxBitrate = m_param->rc.vbvMaxBitrate * 1000ULL;
 
     if (m_param->bEmitHRDSEI && !m_param->decoderVbvMaxRate)
     {
@@ -416,9 +420,9 @@ void RateControl::initVBV(const SPS& sps)
         vbvBufferSize = hrd->cpbSizeValue << (hrd->cpbSizeScale + CPB_SHIFT);
         vbvMaxBitrate = hrd->bitRateValue << (hrd->bitRateScale + BR_SHIFT);
     }
-    m_bufferRate = vbvMaxBitrate / m_fps;
-    m_vbvMaxRate = vbvMaxBitrate;
-    m_bufferSize = vbvBufferSize;
+    m_bufferRate = static_cast<double>(vbvMaxBitrate) / m_fps;
+    m_vbvMaxRate = static_cast<double>(vbvMaxBitrate);
+    m_bufferSize = static_cast<double>(vbvBufferSize);
     m_singleFrameVbv = m_bufferRate * 1.1 > m_bufferSize;
 
     if (m_param->rc.vbvBufferInit > 1.)
@@ -492,7 +496,11 @@ bool RateControl::init(const SPS& sps)
     m_accumPNorm = .01;
     m_accumPQp = (m_param->rc.rateControlMode == X265_RC_CRF ? CRF_INIT_QP : ABR_INIT_QP_MIN) * m_accumPNorm;
 
-
+    for (int i = 0; i < 3; i++)
+    {
+        m_frameCountSeg[i] = 0;
+        m_movingSumComplexitySeg[i] = 0;
+    }
     /* Frame Predictors used in vbv */
     initFramePredictors();
     if (!m_statFileOut && (m_param->rc.bStatWrite || m_param->rc.bStatRead))
@@ -843,11 +851,11 @@ void RateControl::reconfigureRC()
             x265_log(m_param, X265_LOG_WARNING, "VBV buffer size cannot be smaller than one frame, using %d kbit\n",
                 m_param->rc.vbvBufferSize);
         }
-        int vbvBufferSize = m_param->rc.vbvBufferSize * 1000;
-        int vbvMaxBitrate = m_param->rc.vbvMaxBitrate * 1000;
-        m_bufferRate = vbvMaxBitrate / m_fps;
-        m_vbvMaxRate = vbvMaxBitrate;
-        m_bufferSize = vbvBufferSize;
+        uint64_t vbvBufferSize = m_param->rc.vbvBufferSize * 1000ULL;
+        uint64_t vbvMaxBitrate = m_param->rc.vbvMaxBitrate * 1000ULL;
+        m_bufferRate = static_cast<double>(vbvMaxBitrate) / m_fps;
+        m_vbvMaxRate = static_cast<double>(vbvMaxBitrate);
+        m_bufferSize = static_cast<double>(vbvBufferSize);
         m_singleFrameVbv = m_bufferRate * 1.1 > m_bufferSize;
     }
     if (m_param->rc.rateControlMode == X265_RC_CRF)
@@ -889,8 +897,8 @@ void RateControl::reconfigureRC()
 
 void RateControl::initHRD(SPS& sps)
 {
-    int vbvBufferSize = m_param->rc.vbvBufferSize * 1000;
-    int vbvMaxBitrate = m_param->rc.vbvMaxBitrate * 1000;
+    uint64_t vbvBufferSize = m_param->rc.vbvBufferSize * 1000ULL;
+    uint64_t vbvMaxBitrate = m_param->rc.vbvMaxBitrate * 1000ULL;
 
     // Init HRD
     HRDInfo* hrd = &sps.vuiParameters.hrdParameters;
@@ -902,12 +910,12 @@ void RateControl::initHRD(SPS& sps)
 
     // normalize HRD size and rate to the value / scale notation
     hrd->bitRateScale = x265_clip3(0, 15, calcScale(vbvMaxBitrate) - BR_SHIFT);
-    hrd->bitRateValue = (vbvMaxBitrate >> (hrd->bitRateScale + BR_SHIFT));
+    hrd->bitRateValue = static_cast<uint32_t>(vbvMaxBitrate >> (hrd->bitRateScale + BR_SHIFT));
 
     hrd->cpbSizeScale = x265_clip3(0, 15, calcScale(vbvBufferSize) - CPB_SHIFT);
-    hrd->cpbSizeValue = (vbvBufferSize >> (hrd->cpbSizeScale + CPB_SHIFT));
-    int bitRateUnscale = hrd->bitRateValue << (hrd->bitRateScale + BR_SHIFT);
-    int cpbSizeUnscale = hrd->cpbSizeValue << (hrd->cpbSizeScale + CPB_SHIFT);
+    hrd->cpbSizeValue = static_cast<uint32_t>(vbvBufferSize >> (hrd->cpbSizeScale + CPB_SHIFT));
+    uint64_t bitRateUnscale = (uint64_t)hrd->bitRateValue << (hrd->bitRateScale + BR_SHIFT);
+    uint64_t cpbSizeUnscale = (uint64_t)hrd->cpbSizeValue << (hrd->cpbSizeScale + CPB_SHIFT);
 
     // arbitrary
     #define MAX_DURATION 0.5
@@ -1366,6 +1374,14 @@ int RateControl::rateControlStart(Frame* curFrame, RateControlEntry* rce, Encode
             //Reset SBRC buffer
             m_encodedSegmentBits = 0;
             m_segDur = 0;
+            m_iBits = 0;
+            m_totalframesInSegment = m_param->totalFrames - m_framesDone;
+
+            for (int i = 0; i < 3; i++)
+            {
+                m_frameCountSeg[i] = 0;
+                m_movingSumComplexitySeg[i] = 0;
+            }
         }
     }
 
@@ -2248,15 +2264,25 @@ double RateControl::rateEstimateQscale(Frame* curFrame, RateControlEntry *rce)
                 if (m_param->bEnableSBRC)
                 {
                     double rfConstant = m_param->rc.rfConstant;
-                    if (m_currentSatd < rce->movingAvgSum)
+                    if (m_currentSatd < (0.7 *m_movingSumComplexitySeg[rce->sliceType]))
                         rfConstant += 2;
+                    else if (m_currentSatd > (1.3 *m_movingSumComplexitySeg[rce->sliceType]))
+                        rfConstant -= 1;
                     double ipOffset = (curFrame->m_lowres.bScenecut ? m_ipOffset : m_ipOffset / 2.0);
                     rfConstant = (rce->sliceType == I_SLICE ? rfConstant - ipOffset :
                         (rce->sliceType == B_SLICE ? rfConstant + m_pbOffset : rfConstant));
                     double mbtree_offset = m_param->rc.cuTree ? (1.0 - m_param->rc.qCompress) * 13.5 : 0;
-                    double qComp = (m_param->rc.cuTree && !m_param->rc.hevcAq) ? 0.99 : m_param->rc.qCompress;
-                    m_rateFactorConstant = pow(m_currentSatd, 1.0 - qComp) /
+                    double qComp = (m_param->rc.cuTree && !m_param->rc.hevcAq) ? 1.0 : m_param->rc.qCompress;
+                    double baseCplx = m_ncu * (m_param->bframes ? 120 : 80);
+                    m_rateFactorConstant = pow(baseCplx, 1.0 - qComp) /
                         x265_qp2qScale(rfConstant + mbtree_offset);
+
+                    if (IS_REFERENCED(curFrame))
+                    {
+                        double movingAvg = m_frameCountSeg[rce->sliceType] ? ((m_movingSumComplexitySeg[rce->sliceType] * m_frameCountSeg[rce->sliceType]) + m_currentSatd) / (m_frameCountSeg[rce->sliceType] + 1) : m_currentSatd;
+                        m_movingSumComplexitySeg[rce->sliceType] = movingAvg;
+                        m_frameCountSeg[rce->sliceType]++;
+                    }
                 }
                 q = getQScale(rce, m_rateFactorConstant);
                 x265_zone* zone = getZone();
@@ -2534,6 +2560,8 @@ double RateControl::tuneQscaleForSBRC(Frame* curFrame, double q)
     {
         double totalDuration = m_segDur;
         double frameBitsTotal = m_encodedSegmentBits + predictSize(&m_pred[m_predType], q, (double)m_currentSatd);
+        double lookaheadBits = 0;
+        double lookaheadDur = 0;
         for (int i = 0; i < depth; i++)
         {
             int type = curFrame->m_lowres.plannedType[i];
@@ -2544,17 +2572,40 @@ double RateControl::tuneQscaleForSBRC(Frame* curFrame, double q)
             int predType = getPredictorType(curFrame->m_lowres.plannedType[i], type);
             double curBits = predictSize(&m_pred[predType], q, (double)satd);
             frameBitsTotal += curBits;
+            lookaheadBits += curBits;
+            lookaheadDur += m_frameDuration;
             totalDuration += m_frameDuration;
         }
         //Check for segment buffer overflow and adjust QP accordingly
         double segDur = m_param->keyframeMax / m_fps;
         double allowedSize = m_vbvMaxRate * segDur;
         double remDur = segDur - totalDuration;
-        double remainingBits = frameBitsTotal / totalDuration * remDur;
-        if (frameBitsTotal + remainingBits > 0.9 * allowedSize)
-            q = q * 1.01;
+        double remainingBits = frameBitsTotal;
+        int isLastSegmentInaEncode = m_totalframesInSegment < m_param->keyframeMax;
+        remainingBits = lookaheadBits / lookaheadDur * remDur;
+
+		//Reduce over estimation due to I frame size
+        if (m_iBits == 0)
+        {
+            //Compute number of I frames
+            double estimatedIBits = predictSize(&m_pred[m_predType], q, (double)m_currentSatd) * remDur;
+            remainingBits -= estimatedIBits;
+        }
+
+		if (!isLastSegmentInaEncode && m_segDur <  (0.2 * segDur))
+        {
+            if (frameBitsTotal + remainingBits > (allowedSize * 2))
+                q = q * 1.01;
+            else
+                break;
+        }
         else
-            break;
+        {
+            if (frameBitsTotal + remainingBits > (allowedSize))
+                q = q * 1.01;
+            else
+                break;
+        }
     }
     return q;
 }
@@ -3229,6 +3280,10 @@ int RateControl::rateControlEnd(Frame* curFrame, int64_t bits, RateControlEntry*
             rce->hrdTiming->cpbFinalAT = m_prevCpbFinalAT = rce->hrdTiming->cpbInitialAT + (actualBits + filler_bits)/ cpbsizeUnscale;
             rce->hrdTiming->dpbOutputTime = (double)rce->picTimingSEI->m_picDpbOutputDelay * time->numUnitsInTick / time->timeScale + rce->hrdTiming->cpbRemovalTime;
         }
+    }
+    if (rce->sliceType == I_SLICE)
+    {
+        m_iBits = actualBits;
     }
     rce->isActive = false;
     // Allow rateControlStart of next frame only when rateControlEnd of previous frame is over

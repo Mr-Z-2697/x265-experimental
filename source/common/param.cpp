@@ -423,6 +423,10 @@ void x265_param_default(x265_param* param)
     param->searchRangeForLayer1 = 3;
     param->searchRangeForLayer2 = 3;
 
+    /* Threaded ME */
+    param->tmeTaskBlockSize = 1;
+    param->tmeNumBufferRows = 10;
+
     /*Alpha Channel Encoding*/
     param->bEnableAlpha = 0;
     param->numScalableLayers = 1;
@@ -1523,6 +1527,7 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
         }
 #endif
         OPT("frame-rc") p->bConfigRCFrame = atobool(value);
+        OPT("threaded-me") p->bThreadedME = atobool(value);
         else
             return X265_PARAM_BAD_NAME;
     }
@@ -1672,7 +1677,7 @@ int x265_check_params(x265_param* param)
 {
 #define CHECK(expr, msg) check_failed |= _confirm(param, expr, msg)
     int check_failed = 0; /* abort if there is a fatal configuration problem */
-    CHECK((uint64_t)param->sourceWidth * param->sourceHeight > 142606336,
+    CHECK((uint64_t)param->sourceWidth * param->sourceHeight > 142606336ULL && !param->bAllowNonConformance,
           "Input video resolution exceeds the maximum supported luma samples 142,606,336 (16384x8704) of Level 7.2.");
     CHECK(param->uhdBluray == 1 && (X265_DEPTH != 10 || param->internalCsp != 1 || param->interlaceMode != 0),
         "uhd-bd: bit depth, chroma subsample, source picture type must be 10, 4:2:0, progressive");
@@ -1810,10 +1815,10 @@ int x265_check_params(x265_param* param)
           " smpte170m, smpte240m, linear, log100, log316, iec61966-2-4, bt1361e,"
           " iec61966-2-1, bt2020-10, bt2020-12, smpte-st-2084, smpte-st-428 or arib-std-b67");
     CHECK(param->vui.matrixCoeffs < 0
-          || param->vui.matrixCoeffs > 14
+          || param->vui.matrixCoeffs > 15
           || param->vui.matrixCoeffs == 3,
           "Matrix Coefficients must be unknown, bt709, fcc, bt470bg, smpte170m,"
-          " smpte240m, gbr, ycgco, bt2020nc, bt2020c, smpte-st-2085, chroma-nc, chroma-c or ictcp");
+          " smpte240m, gbr, ycgco, bt2020nc, bt2020c, smpte-st-2085, chroma-nc, chroma-c, ictcp or ipt-pq-c2");
     CHECK(param->vui.chromaSampleLocTypeTopField < 0
           || param->vui.chromaSampleLocTypeTopField > 5,
           "Chroma Sample Location Type Top Field must be 0-5");
@@ -1862,6 +1867,11 @@ int x265_check_params(x265_param* param)
         "Valid final VBV buffer emptiness must be a fraction 0 - 1, or size in kbits");
     CHECK(param->vbvEndFrameAdjust < 0,
         "Valid vbv-end-fr-adj must be a fraction 0 - 1");
+    if ((param->rc.vbvBufferSize > 0 || param->rc.vbvMaxBitrate > 0) && param->bThreadedME)
+    {
+        param->bThreadedME = 0;
+        x265_log(param, X265_LOG_WARNING, "VBV and threaded-me both enabled. Disabling threaded-me\n");
+    }
     CHECK(param->minVbvFullness < 0 && param->minVbvFullness > 100,
         "min-vbv-fullness must be a fraction 0 - 100");
     CHECK(param->maxVbvFullness < 0 && param->maxVbvFullness > 100,
@@ -1955,7 +1965,7 @@ int x265_check_params(x265_param* param)
             CHECK(param->hmeRange[level] < 0 || param->hmeRange[level] >= 32768,
                 "Search Range for HME levels must be between 0 and 32768");
     }
-#if !X86_64 && !X265_ARCH_ARM64
+#if !X86_64 && !X265_ARCH_ARM64 && !X265_ARCH_RISCV64
     CHECK(param->searchMethod == X265_SEA && (param->sourceWidth > 840 || param->sourceHeight > 480),
         "SEA motion search does not support resolutions greater than 480p in 32 bit build");
 #endif
@@ -1977,11 +1987,6 @@ int x265_check_params(x265_param* param)
     {
         param->bSingleSeiNal = 0;
         x265_log(param, X265_LOG_WARNING, "None of the SEI messages are enabled. Disabling Single SEI NAL\n");
-    }
-    if (param->bEnableTemporalFilter && (param->frameNumThreads != 1))
-    {
-        param->bEnableTemporalFilter = 0;
-        x265_log(param, X265_LOG_WARNING, "MCSTF can be enabled with frame thread = 1 only. Disabling MCSTF\n");
     }
     CHECK(param->confWinRightOffset < 0, "Conformance Window Right Offset must be 0 or greater");
     CHECK(param->confWinBottomOffset < 0, "Conformance Window Bottom Offset must be 0 or greater");
@@ -2092,6 +2097,9 @@ void x265_print_params(x265_param* param)
         x265_log(param, X265_LOG_INFO, "Interlaced field inputs             : %s\n", x265_interlace_names[param->interlaceMode]);
 
     x265_log(param, X265_LOG_INFO, "Coding QT: max CU size, min CU size : %d / %d\n", param->maxCUSize, param->minCUSize);
+
+    if (param->bThreadedME)
+        x265_log(param, X265_LOG_INFO, "ThreadedME: task block / buf rows   : %d / %d\n", param->tmeTaskBlockSize, param->tmeNumBufferRows);
 
     x265_log(param, X265_LOG_INFO, "Residual QT: max TU size, max depth : %d / %d inter / %d intra\n",
              param->maxTUSize, param->tuQTMaxInterDepth, param->tuQTMaxIntraDepth);
@@ -2220,6 +2228,8 @@ void x265_print_params(x265_param* param)
 #if ENABLE_HDR10_PLUS
     TOOLOPT(param->toneMapFile != NULL, "dhdr10-info");
 #endif
+    if(param->bEnableTemporalFilter)
+        TOOLOPT(param->bEnableTemporalFilter, "mcstf");
     x265_log(param, X265_LOG_INFO, "tools:%s\n", buf);
     fflush(stderr);
 }
@@ -2997,6 +3007,9 @@ void x265_copy_params(x265_param* dst, x265_param* src)
     dst->bEnableHRDConcatFlag = src->bEnableHRDConcatFlag;
     dst->dolbyProfile = src->dolbyProfile;
     dst->bEnableSvtHevc = src->bEnableSvtHevc;
+    dst->bThreadedME = src->bThreadedME;
+    dst->tmeTaskBlockSize = src->tmeTaskBlockSize;
+    dst->tmeNumBufferRows = src->tmeNumBufferRows;
     dst->bEnableFades = src->bEnableFades;
     dst->bEnableSceneCutAwareQp = src->bEnableSceneCutAwareQp;
     dst->fwdMaxScenecutWindow = src->fwdMaxScenecutWindow;
