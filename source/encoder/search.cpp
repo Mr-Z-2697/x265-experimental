@@ -1706,7 +1706,6 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
     bmode = mode = DC_IDX;
     bbits = (mpms & ((uint64_t)1 << mode)) ? m_entropyCoder.bitsIntraModeMPM(mpmModes, mode) : rbits;
     bcost = m_rdCost.calcRdSADCost(bsad, bbits);
-    goto finish;
 
     // PLANAR
     pixel* planar = intraNeighbourBuf[0];
@@ -1790,7 +1789,6 @@ void Search::checkIntraInInter(Mode& intraMode, const CUGeom& cuGeom)
         }
     }
 
-finish:
     cu.setLumaIntraDirSubParts((uint8_t)bmode, absPartIdx, depth + initTuDepth);
     intraMode.initCosts();
     intraMode.totalBits = bbits;
