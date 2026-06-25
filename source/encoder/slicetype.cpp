@@ -4266,11 +4266,12 @@ void CostEstimateGroup::estimateCUCost(LookaheadTLD& tld, int cuX, int cuY, int 
     const int cuXY_4x4 = (cuX / 2) + (cuY / 2) * widthInCU / 2;
     const int cuSize = X265_LOWRES_CU_SIZE;
     const intptr_t pelOffset = cuSize * cuX + cuSize * cuY * (hme ? fenc->lumaStride/2 : fenc->lumaStride);
+    const int searchMethod = m_lookahead.m_param->searchMethod == X265_STAR_SEARCH ? X265_UMH_SEARCH : m_lookahead.m_param->searchMethod; // star abnormal slow in half res
 
     if ((bBidir || bDoSearch[0] || bDoSearch[1]) && hme)
-        tld.me.setSourcePU(fenc->lowerResPlane[0], fenc->lumaStride / 2, pelOffset, cuSize, cuSize, X265_HEX_SEARCH, m_lookahead.m_param->hmeSearchMethod[0], m_lookahead.m_param->hmeSearchMethod[1], 1);
+        tld.me.setSourcePU(fenc->lowerResPlane[0], fenc->lumaStride / 2, pelOffset, cuSize, cuSize, searchMethod, m_lookahead.m_param->hmeSearchMethod[0], m_lookahead.m_param->hmeSearchMethod[1], 1);
     else if((bBidir || bDoSearch[0] || bDoSearch[1]) && !hme)
-        tld.me.setSourcePU(fenc->lowresPlane[0], fenc->lumaStride, pelOffset, cuSize, cuSize, X265_HEX_SEARCH, m_lookahead.m_param->hmeSearchMethod[0], m_lookahead.m_param->hmeSearchMethod[1], 1);
+        tld.me.setSourcePU(fenc->lowresPlane[0], fenc->lumaStride, pelOffset, cuSize, cuSize, searchMethod, m_lookahead.m_param->hmeSearchMethod[0], m_lookahead.m_param->hmeSearchMethod[1], 1);
 
 
     /* A small, arbitrary bias to avoid VBV problems caused by zero-residual lookahead blocks. */
@@ -4344,7 +4345,7 @@ void CostEstimateGroup::estimateCUCost(LookaheadTLD& tld, int cuX, int cuY, int 
             }
         }
 
-        int searchRange = m_lookahead.m_param->bEnableHME ? (hme ? m_lookahead.m_param->hmeRange[0] : m_lookahead.m_param->hmeRange[1]) : s_merange;
+        int searchRange = m_lookahead.m_param->bEnableHME ? (hme ? m_lookahead.m_param->hmeRange[0] : m_lookahead.m_param->hmeRange[1]) : m_lookahead.m_param->searchRange;
         /* ME will never return a cost larger than the cost @MVP, so we do not
          * have to check that ME cost is more than the estimated merge cost */
         if(!hme)
