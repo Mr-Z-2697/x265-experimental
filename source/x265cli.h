@@ -324,7 +324,7 @@ static const struct option long_options[] =
     { "no-hdr-opt",           no_argument, NULL, 0 },
     { "hdr10-opt",            no_argument, NULL, 0 },
     { "no-hdr10-opt",         no_argument, NULL, 0 },
-    { "limit-sao",            no_argument, NULL, 0 },
+    { "limit-sao",      required_argument, NULL, 0 },
     { "no-limit-sao",         no_argument, NULL, 0 },
     { "dhdr10-info",    required_argument, NULL, 0 },
     { "dhdr10-opt",           no_argument, NULL, 0},

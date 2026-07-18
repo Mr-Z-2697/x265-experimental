@@ -1371,7 +1371,7 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
         OPT("hdr10") p->bEmitHDR10SEI = atobool(value);
         OPT("hdr-opt") p->bHDR10Opt = atobool(value); /*DEPRECATED*/
         OPT("hdr10-opt") p->bHDR10Opt = atobool(value);
-        OPT("limit-sao") p->bLimitSAO = atobool(value);
+        OPT("limit-sao") p->bLimitSAO = atoi(value);
         OPT("dhdr10-info") snprintf(p->toneMapFile, X265_MAX_STRING_SIZE, "%s", value);
         OPT("dhdr10-opt") p->bDhdr10opt = atobool(value);
         OPT("idr-recovery-sei") p->bEmitIDRRecoverySEI = atobool(value);
@@ -2341,7 +2341,7 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     BOOL(p->bEnableLoopFilter, "deblock");
     if (p->bEnableLoopFilter)
         s += snprintf(s, bufSize - (s - buf), "=%d:%d", p->deblockingFilterTCOffset, p->deblockingFilterBetaOffset);
-    BOOL(p->bEnableSAO, "sao");
+    BOOL(p->bEnableSAO && !(p->bLimitSAO == 2), "sao");
     BOOL(p->bSaoNonDeblocked, "sao-non-deblock");
     s += snprintf(s, bufSize - (s - buf), " rd=%d", p->rdLevel);
     s += snprintf(s, bufSize - (s - buf), " selective-sao=%d", p->selectiveSAO);
@@ -2470,7 +2470,7 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     s += snprintf(s, bufSize - (s - buf), " refine-inter=%d", p->interRefine);
     s += snprintf(s, bufSize - (s - buf), " refine-mv=%d", p->mvRefine);
     s += snprintf(s, bufSize - (s - buf), " refine-ctu-distortion=%d", p->ctuDistortionRefine);
-    BOOL(p->bLimitSAO, "limit-sao");
+    s += snprintf(s, bufSize - (s - buf), " limit-sao=%d", p->bLimitSAO);
     s += snprintf(s, bufSize - (s - buf), " ctu-info=%d", p->bCTUInfo);
     BOOL(p->bLowPassDct, "lowpass-dct");
     s += snprintf(s, bufSize - (s - buf), " refine-analysis-type=%d", p->bAnalysisType);

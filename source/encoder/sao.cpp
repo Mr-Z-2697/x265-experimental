@@ -47,9 +47,12 @@ inline int signOf2(const int a, const int b)
     return r;
 }
 
-inline int64_t estSaoDist(int32_t count, int32_t offset, int32_t offsetOrg)
+inline int64_t estSaoDist(int32_t count, int32_t offset, int32_t offsetOrg, int32_t l)
 {
-    return (count * offset - offsetOrg * 2) * offset;
+    if (l == 2)
+        return INT64_MAX;
+    else
+        return (count * offset - offsetOrg * 2) * offset;
 }
 } // end anonymous namespace
 
@@ -1316,7 +1319,7 @@ void SAO::rdoSaoUnitCu(SAOParam* saoParam, int rowBaseAddr, int idxX, int addr)
                     for (int classIdx = 0; classIdx < SAO_NUM_OFFSET; classIdx++)
                     {
                         int mergeOffset = mergeSrcParam->offset[classIdx];
-                        estDist += estSaoDist(m_count[plane][typeIdx][classIdx + bandPos], mergeOffset, m_offsetOrg[plane][typeIdx][classIdx + bandPos]);
+                        estDist += estSaoDist(m_count[plane][typeIdx][classIdx + bandPos], mergeOffset, m_offsetOrg[plane][typeIdx][classIdx + bandPos], m_param->bLimitSAO);
                     }
                 }
                 mergeDist += (estDist << 8) / lambda[!!plane];
@@ -1451,7 +1454,7 @@ void SAO::estIterOffset(int typeIdx, int64_t lambda, int32_t count, int32_t offs
             rate--;
 
         // Do the dequntization before distorion calculation
-        int64_t dist = estSaoDist(count, offset << SAO_BIT_INC, offsetOrg);
+        int64_t dist = estSaoDist(count, offset << SAO_BIT_INC, offsetOrg, m_param->bLimitSAO);
         int64_t cost  = calcSaoRdoCost(dist, rate, lambda);
         if (cost < bestCost)
         {
